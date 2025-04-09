@@ -1,0 +1,538 @@
+X;ABREV;TALLA;vol.relativo;COLOR;YEAR
+1;E.encrasicolus;< 18;0.184210411;red;1990
+2;E.encrasicolus;> 34;0.064267469;red;1990
+3;Euphausiacea;< 18;0.085710612;orange;1990
+4;G.argenteus;< 18;0.163244957;aquamarine;1990
+5;M.merluccius;18 - 34;0.0766268;yellow;1990
+6;M.merluccius;> 34;0.054660954;yellow;1990
+7;M.norvegica;< 18;0.055803438;blue;1990
+8;M.poutassou;< 18;0.071285083;cyan;1990
+9;M.poutassou;18 - 34;0.374676621;cyan;1990
+10;M.poutassou;> 34;0.581214956;cyan;1990
+11;Osteichthyes;< 18;0.133276557;brown;1990
+12;Osteichthyes;18 - 34;0.099722573;brown;1990
+13;Osteichthyes;> 34;0.102881846;brown;1990
+14;otros;< 18;0.305992447;purple;1990
+15;otros;18 - 34;0.092532425;purple;1990
+16;otros;> 34;0.146884123;purple;1990
+17;S.pilchardus;18 - 34;0.139252034;tan             ;1990
+18;S.scombrus;18 - 34;0.115206231;darkorange2;1990
+19;S.scombrus;> 34;0.050017758;darkorange2;1990
+20;T.trachurus;18 - 34;0.101983316;violetred;1990
+1;A.glaber;< 18;0.062654575;cyan4;1991
+2;C.macrophthalma;18 - 34;0.071428571;red4;1991
+3;E.encrasicolus;< 18;0.344600165;red;1991
+4;E.encrasicolus;> 34;0.11135639;red;1991
+5;G.argenteus;< 18;0.129225062;aquamarine;1991
+6;M.poutassou;18 - 34;0.761083744;cyan;1991
+7;M.poutassou;> 34;0.76073093;cyan;1991
+8;Osteichthyes;< 18;0.067600989;brown;1991
+9;otros;< 18;0.230997527;purple;1991
+10;otros;18 - 34;0.078817734;purple;1991
+11;otros;> 34;0.127912681;purple;1991
+12;Processa sp;< 18;0.164921682;royalblue;1991
+13;S.pilchardus;18 - 34;0.088669951;tan             ;1991
+1;C.macrophthalma;> 34;0.069484241;red4;1992
+2;C.macrophthalma;18 - 34;0.106302202;red4;1992
+3;E.encrasicolus;< 18;0.48452508;red;1992
+4;E.encrasicolus;> 34;0.081930516;red;1992
+5;Euphausiacea;< 18;0.065528282;orange;1992
+6;G.argenteus;< 18;0.078175027;aquamarine;1992
+7;M.merluccius;18 - 34;0.455580866;yellow;1992
+8;M.poutassou;18 - 34;0.303720577;cyan;1992
+9;M.poutassou;> 34;0.47467765;cyan;1992
+10;Osteichthyes;< 18;0.097812166;brown;1992
+11;otros;18 - 34;0.058466211;purple;1992
+12;otros;> 34;0.183219914;purple;1992
+13;otros;< 18;0.215154749;purple;1992
+14;Processa sp;< 18;0.058804696;royalblue;1992
+15;S.pilchardus;18 - 34;0.075930144;tan             ;1992
+16;S.pilchardus;> 34;0.118767908;tan             ;1992
+17;T.minutus;> 34;0.071919771;cyan3;1992
+1;C.crassicornis;< 18;0.074620133;NA;1993
+2;Euphausiacea;< 18;0.121818613;orange;1993
+3;G.argenteus;< 18;0.260636277;aquamarine;1993
+4;G.macrophthalmus;< 18;0.057098765;chocolate;1993
+5;M.poutassou;18 - 34;0.752757353;cyan;1993
+6;M.poutassou;> 34;0.583898638;cyan;1993
+7;Osteichthyes;< 18;0.070180437;brown;1993
+8;otros;< 18;0.361039886;purple;1993
+9;otros;18 - 34;0.078768382;purple;1993
+10;otros;> 34;0.294374054;purple;1993
+11;S.pilchardus;18 - 34;0.101102941;tan             ;1993
+12;T.trachurus;< 18;0.054605888;violetred;1993
+13;T.trachurus;> 34;0.121727308;violetred;1993
+14;T.trachurus;18 - 34;0.067371324;violetred;1993
+1;C.macrophthalma;18 - 34;0.060462131;red4;1994
+2;G.argenteus;< 18;0.482552791;aquamarine;1994
+3;M.merluccius;< 18;0.091365252;yellow;1994
+4;M.poutassou;18 - 34;0.709730424;cyan;1994
+5;M.poutassou;> 34;0.582451253;cyan;1994
+6;otros;< 18;0.372768137;purple;1994
+7;otros;18 - 34;0.037175866;purple;1994
+8;otros;> 34;0.086400131;purple;1994
+9;S.pilchardus;18 - 34;0.132041078;tan             ;1994
+10;S.pilchardus;> 34;0.086023267;tan             ;1994
+11;T.trachurus;< 18;0.05331382;violetred;1994
+12;T.trachurus;18 - 34;0.060590501;violetred;1994
+13;T.trachurus;> 34;0.245125348;violetred;1994
+1;G.argenteus;< 18;0.393160535;aquamarine;1995
+2;M.poutassou;< 18;0.224414716;cyan;1995
+3;M.poutassou;18 - 34;0.360346072;cyan;1995
+4;M.poutassou;> 34;0.694393855;cyan;1995
+5;Osteichthyes;< 18;0.076488294;brown;1995
+6;Osteichthyes;18 - 34;0.086911819;brown;1995
+7;otros;< 18;0.305936455;purple;1995
+8;otros;18 - 34;0.017292674;purple;1995
+9;otros;> 34;0.110103399;purple;1995
+10;S.scombrus;18 - 34;0.458053508;darkorange2;1995
+11;S.scombrus;> 34;0.195502747;darkorange2;1995
+12;T.trachurus;18 - 34;0.077395927;violetred;1995
+1;E.encrasicolus;< 18;0.201984228;red;1996
+2;Euphausiacea;< 18;0.06659883;orange;1996
+3;G.argenteus;< 18;0.165250572;aquamarine;1996
+4;G.Gobiidae;< 18;0.056932078;NA;1996
+5;L.typicus;< 18;0.125077588;gray50;1996
+6;L.vulgaris;18 - 34;0.080651356;firebrick4;1996
+7;M.poutassou;18 - 34;0.480105999;cyan;1996
+8;M.poutassou;> 34;0.63197392;cyan;1996
+9;Osteichthyes;> 34;0.066586444;brown;1996
+10;otros;< 18;0.384156703;purple;1996
+11;otros;18 - 34;0.170788847;purple;1996
+12;otros;> 34;0.176073163;purple;1996
+13;S.scombrus;> 34;0.064324159;darkorange2;1996
+14;S.scombrus;18 - 34;0.097933789;darkorange2;1996
+15;T.trachurus;18 - 34;0.170520009;violetred;1996
+16;T.trachurus;> 34;0.061042314;violetred;1996
+1;C.crassicornis;< 18;0.081820266;NA;1997
+2;C.macrophthalma;18 - 34;0.074977001;red4;1997
+3;E.encrasicolus;> 34;0.124289761;red;1997
+4;G.argenteus;< 18;0.174071527;aquamarine;1997
+5;G.macrophthalmus;< 18;0.054516277;chocolate;1997
+6;M.merluccius;< 18;0.065107749;yellow;1997
+7;M.merluccius;> 34;0.120228847;yellow;1997
+8;M.merluccius;18 - 34;0.051517939;yellow;1997
+9;M.poutassou;18 - 34;0.606439742;cyan;1997
+10;M.poutassou;< 18;0.068775791;cyan;1997
+11;M.poutassou;> 34;0.596278431;cyan;1997
+12;Natantia;< 18;0.054986245;yellowgreen;1997
+13;Osteichthyes;18 - 34;0.067663293;brown;1997
+14;Osteichthyes;< 18;0.139030261;brown;1997
+15;Osteichthyes;> 34;0.082919202;brown;1997
+16;otros;< 18;0.361691884;purple;1997
+17;otros;18 - 34;0.052207912;purple;1997
+18;otros;> 34;0.076283759;purple;1997
+19;S.scombrus;18 - 34;0.077276909;darkorange2;1997
+20;T.trachurus;18 - 34;0.069917203;violetred;1997
+1;E.encrasicolus;< 18;0.48158474;red;1998
+2;Euphausiacea;< 18;0.081933236;orange;1998
+3;L.typicus;< 18;0.066104182;gray50;1998
+4;M.poutassou;18 - 34;0.432373791;cyan;1998
+5;M.poutassou;> 34;0.659772786;cyan;1998
+6;Osteichthyes;< 18;0.088646368;brown;1998
+7;Osteichthyes;18 - 34;0.092089572;brown;1998
+8;otros;< 18;0.281731475;purple;1998
+9;otros;18 - 34;0.073853849;purple;1998
+10;otros;> 34;0.211902918;purple;1998
+11;S.pilchardus;18 - 34;0.115940109;tan             ;1998
+12;S.scombrus;18 - 34;0.099708493;darkorange2;1998
+13;S.scombrus;> 34;0.128324296;darkorange2;1998
+14;T.trachurus;18 - 34;0.186034186;violetred;1998
+1;C.crassicornis;< 18;0.08288131;NA;1999
+2;Euphausiacea;< 18;0.077712137;orange;1999
+3;G.argenteus;< 18;0.273429108;aquamarine;1999
+4;M.poutassou;18 - 34;0.55763923;cyan;1999
+5;M.poutassou;> 34;0.615315356;cyan;1999
+6;Osteichthyes;< 18;0.193971536;brown;1999
+7;Osteichthyes;> 34;0.071208301;brown;1999
+8;otros;< 18;0.372005908;purple;1999
+9;otros;> 34;0.159512448;purple;1999
+10;otros;18 - 34;0.122121819;purple;1999
+11;S.pilchardus;> 34;0.153963895;tan             ;1999
+12;S.pilchardus;18 - 34;0.192067753;tan             ;1999
+13;T.trachurus;18 - 34;0.128171197;violetred;1999
+1;E.encrasicolus;< 18;0.0619664;red;2000
+2;Euphausiacea;< 18;0.102038006;orange;2000
+3;G.argenteus;< 18;0.144519416;aquamarine;2000
+4;M.poutassou;< 18;0.118424676;cyan;2000
+5;M.poutassou;> 34;0.717007098;cyan;2000
+6;M.poutassou;18 - 34;0.608060666;cyan;2000
+7;Osteichthyes;> 34;0.116217587;brown;2000
+8;Osteichthyes;< 18;0.253043239;brown;2000
+9;Osteichthyes;18 - 34;0.09352619;brown;2000
+10;otros;> 34;0.104193829;purple;2000
+11;otros;< 18;0.265133572;purple;2000
+12;otros;18 - 34;0.091981463;purple;2000
+13;Processa sp;< 18;0.05487469;royalblue;2000
+14;S.pilchardus;18 - 34;0.105322286;tan             ;2000
+15;T.trachurus;18 - 34;0.101109395;violetred;2000
+16;T.trachurus;> 34;0.062581486;violetred;2000
+1;C.macrophthalma;18 - 34;0.054005401;red4;2001
+2;Euphausiacea;< 18;0.258711992;orange;2001
+3;G.argenteus;< 18;0.256132559;aquamarine;2001
+4;M.merluccius;18 - 34;0.081008101;yellow;2001
+5;M.poutassou;18 - 34;0.518226823;cyan;2001
+6;M.poutassou;> 34;0.55353839;cyan;2001
+7;Osteichthyes;< 18;0.252955244;brown;2001
+8;Osteichthyes;18 - 34;0.098334833;brown;2001
+9;Osteichthyes;> 34;0.20526827;brown;2001
+10;otros;18 - 34;0.072457246;purple;2001
+11;otros;> 34;0.145448659;purple;2001
+12;otros;< 18;0.232200205;purple;2001
+13;S.pilchardus;18 - 34;0.175967597;tan             ;2001
+14;S.pilchardus;> 34;0.095744681;tan             ;2001
+1;C.macrophthalma;18 - 34;0.060429929;red4;2002
+2;Euphausiacea;< 18;0.179166667;orange;2002
+3;G.argenteus;< 18;0.461111111;aquamarine;2002
+4;M.poutassou;> 34;0.60206924;cyan;2002
+5;M.poutassou;18 - 34;0.342513147;cyan;2002
+6;Osteichthyes;< 18;0.108047386;brown;2002
+7;Osteichthyes;> 34;0.054566255;brown;2002
+8;Osteichthyes;18 - 34;0.073761417;brown;2002
+9;otros;< 18;0.251674837;purple;2002
+10;otros;18 - 34;0.021404189;purple;2002
+11;otros;> 34;0.099631914;purple;2002
+12;S.pilchardus;> 34;0.165638679;tan             ;2002
+13;S.pilchardus;18 - 34;0.178522004;tan             ;2002
+14;S.scombrus;18 - 34;0.05535566;darkorange2;2002
+15;T.trachurus;18 - 34;0.199741674;violetred;2002
+16;T.trachurus;> 34;0.078093912;violetred;2002
+17;Trisopterus sp;18 - 34;0.068271981;brown4;2002
+1;B.boops;< 18;0.056634304;lemonchiffon;2003
+2;B.boops;> 34;0.064277072;lemonchiffon;2003
+3;C.macrophthalma;> 34;0.054143981;red4;2003
+4;Euphausiacea;< 18;0.141484628;orange;2003
+5;G.argenteus;< 18;0.080987055;aquamarine;2003
+6;M.merluccius;< 18;0.080097087;yellow;2003
+7;M.poutassou;> 34;0.747746521;cyan;2003
+8;M.poutassou;18 - 34;0.484750491;cyan;2003
+9;Osteichthyes;< 18;0.227144013;brown;2003
+10;Osteichthyes;> 34;0.085559589;brown;2003
+11;Osteichthyes;18 - 34;0.106271004;brown;2003
+12;otros;18 - 34;0.022192632;purple;2003
+13;otros;< 18;0.413652913;purple;2003
+14;otros;> 34;0.048272837;purple;2003
+15;T.trachurus;18 - 34;0.386785873;violetred;2003
+1;A.sphyraena;< 18;0.10286455;pink;2004
+2;Euphausiacea;< 18;0.101657809;orange;2004
+3;G.argenteus;< 18;0.19639663;aquamarine;2004
+4;G.Gobiidae;< 18;0.074349968;NA;2004
+5;M.merluccius;18 - 34;0.208385639;yellow;2004
+6;M.merluccius;> 34;0.160866481;yellow;2004
+7;M.muelleri;< 18;0.056675308;green;2004
+8;M.norvegica;< 18;0.133849644;blue;2004
+9;M.poutassou;18 - 34;0.223449661;cyan;2004
+10;M.poutassou;> 34;0.307927677;cyan;2004
+11;Osteichthyes;< 18;0.126716785;brown;2004
+12;Osteichthyes;> 34;0.109763561;brown;2004
+13;Osteichthyes;18 - 34;0.181437777;brown;2004
+14;otros;< 18;0.207489307;purple;2004
+15;otros;> 34;0.223598053;purple;2004
+16;otros;18 - 34;0.051970876;purple;2004
+17;S.pilchardus;18 - 34;0.184115826;tan             ;2004
+18;S.pilchardus;> 34;0.197844228;tan             ;2004
+19;T.trachurus;18 - 34;0.150640221;violetred;2004
+1;Euphausiacea;< 18;0.090014324;orange;2005
+2;G.argenteus;< 18;0.233407608;aquamarine;2005
+3;G.Gobiidae;< 18;0.05248289;NA;2005
+4;M.merluccius;18 - 34;0.133281393;yellow;2005
+5;M.merluccius;> 34;0.055461398;yellow;2005
+6;M.poutassou;18 - 34;0.12715991;cyan;2005
+7;M.poutassou;> 34;0.340807725;cyan;2005
+8;M.surmuletus;18 - 34;0.050084866;palegreen3;2005
+9;Osteichthyes;< 18;0.284225688;brown;2005
+10;Osteichthyes;18 - 34;0.324494282;brown;2005
+11;Osteichthyes;> 34;0.227670487;brown;2005
+12;otros;18 - 34;0.044436406;purple;2005
+13;otros;> 34;0.087803845;purple;2005
+14;otros;< 18;0.339869489;purple;2005
+15;S.pilchardus;18 - 34;0.143298367;tan             ;2005
+16;S.scombrus;18 - 34;0.177244776;darkorange2;2005
+17;S.scombrus;> 34;0.288256545;darkorange2;2005
+1;G.argenteus;< 18;0.242212121;aquamarine;2006
+2;M.merluccius;< 18;0.186616162;yellow;2006
+3;M.merluccius;> 34;0.06465496;yellow;2006
+4;M.poutassou;> 34;0.595051891;cyan;2006
+5;M.poutassou;18 - 34;0.253315557;cyan;2006
+6;M.poutassou;< 18;0.177575758;cyan;2006
+7;Osteichthyes;> 34;0.17486105;brown;2006
+8;Osteichthyes;< 18;0.163686869;brown;2006
+9;Osteichthyes;18 - 34;0.261104484;brown;2006
+10;otros;< 18;0.229909091;purple;2006
+11;otros;> 34;0.066240388;purple;2006
+12;otros;18 - 34;0.024910533;purple;2006
+13;S.scombrus;18 - 34;0.161392183;darkorange2;2006
+14;S.scombrus;> 34;0.099191711;darkorange2;2006
+15;T.trachurus;18 - 34;0.299277244;violetred;2006
+1;B.boops;18 - 34;0.06013663;lemonchiffon;2007
+2;Euphausiacea;< 18;0.193928934;orange;2007
+3;G.argenteus;< 18;0.300203046;aquamarine;2007
+4;M.merluccius;> 34;0.082378605;yellow;2007
+5;M.muelleri;< 18;0.056365482;green;2007
+6;M.poutassou;18 - 34;0.149860483;cyan;2007
+7;M.poutassou;> 34;0.573014578;cyan;2007
+8;Osteichthyes;< 18;0.218456853;brown;2007
+9;Osteichthyes;> 34;0.187688433;brown;2007
+10;Osteichthyes;18 - 34;0.17776388;brown;2007
+11;otros;> 34;0.094846238;purple;2007
+12;otros;< 18;0.231045685;purple;2007
+13;otros;18 - 34;0.040941018;purple;2007
+14;S.scombrus;> 34;0.062072146;darkorange2;2007
+15;S.scombrus;18 - 34;0.571297989;darkorange2;2007
+1;Alloteuthis sp;< 18;0.066866208;lightblue4;2008
+2;E.encrasicolus;> 34;0.055104082;red;2008
+3;Euphausiacea;< 18;0.154483688;orange;2008
+4;G.argenteus;< 18;0.179512122;aquamarine;2008
+5;M.merluccius;18 - 34;0.208139354;yellow;2008
+6;M.merluccius;> 34;0.353425642;yellow;2008
+7;M.norvegica;< 18;0.115010476;blue;2008
+8;M.poutassou;> 34;0.07384197;cyan;2008
+9;Osteichthyes;< 18;0.109982041;brown;2008
+10;Osteichthyes;> 34;0.082968682;brown;2008
+11;otros;> 34;0.141260861;purple;2008
+12;otros;18 - 34;0.181473722;purple;2008
+13;otros;< 18;0.374145465;purple;2008
+14;S.pilchardus;18 - 34;0.365973515;tan             ;2008
+15;S.pilchardus;> 34;0.114709008;tan             ;2008
+16;T.trachurus;> 34;0.178689754;violetred;2008
+17;T.trachurus;18 - 34;0.244413408;violetred;2008
+1;E.encrasicolus;< 18;0.056031641;red;2009
+2;E.encrasicolus;> 34;0.057675324;red;2009
+3;E.encrasicolus;18 - 34;0.067979109;red;2009
+4;Euphausiacea;< 18;0.077042848;orange;2009
+5;G.argenteus;< 18;0.089321028;aquamarine;2009
+6;M.merluccius;< 18;0.159789057;yellow;2009
+7;M.poutassou;< 18;0.287936717;cyan;2009
+8;M.poutassou;18 - 34;0.191637485;cyan;2009
+9;M.poutassou;> 34;0.703663866;cyan;2009
+10;Osteichthyes;< 18;0.056945287;brown;2009
+11;Osteichthyes;18 - 34;0.128962018;brown;2009
+12;Osteichthyes;> 34;0.085033174;brown;2009
+13;otros;< 18;0.272933421;purple;2009
+14;otros;> 34;0.086928512;purple;2009
+15;otros;18 - 34;0.056313789;purple;2009
+16;S.pilchardus;18 - 34;0.31413307;tan             ;2009
+17;S.scombrus;18 - 34;0.09675556;darkorange2;2009
+18;T.trachurus;18 - 34;0.14421897;violetred;2009
+19;T.trachurus;> 34;0.066699124;violetred;2009
+1;B.boops;18 - 34;0.069145042;lemonchiffon;2010
+2;E.encrasicolus;< 18;0.387106184;red;2010
+3;E.encrasicolus;> 34;0.083859333;red;2010
+4;E.encrasicolus;18 - 34;0.22980558;red;2010
+5;Euphausiacea;< 18;0.091763905;orange;2010
+6;G.argenteus;< 18;0.142648775;aquamarine;2010
+7;M.merluccius;18 - 34;0.060501912;yellow;2010
+8;M.poutassou;18 - 34;0.200418938;cyan;2010
+9;M.poutassou;< 18;0.137300661;cyan;2010
+10;M.poutassou;> 34;0.75097344;cyan;2010
+11;Osteichthyes;< 18;0.056845585;brown;2010
+12;Osteichthyes;> 34;0.079305681;brown;2010
+13;Osteichthyes;18 - 34;0.112503051;brown;2010
+14;otros;< 18;0.184334889;purple;2010
+15;otros;> 34;0.085861546;purple;2010
+16;otros;18 - 34;0.042503864;purple;2010
+17;S.pilchardus;18 - 34;0.211502481;tan             ;2010
+18;S.scombrus;18 - 34;0.073619133;darkorange2;2010
+1;C.crassicornis;< 18;0.053832937;NA;2011
+2;E.encrasicolus;< 18;0.200634417;red;2011
+3;E.encrasicolus;> 34;0.070751959;red;2011
+4;Euphausiacea;< 18;0.115836638;orange;2011
+5;G.argenteus;< 18;0.096161776;aquamarine;2011
+6;M.merluccius;18 - 34;0.35820073;yellow;2011
+7;M.merluccius;> 34;0.131570869;yellow;2011
+8;M.muelleri;< 18;0.054665609;green;2011
+9;M.norvegica;< 18;0.076275443;blue;2011
+10;M.poutassou;< 18;0.058154904;cyan;2011
+11;M.poutassou;18 - 34;0.072673417;cyan;2011
+12;M.poutassou;> 34;0.394836861;cyan;2011
+13;Osteichthyes;< 18;0.080708432;brown;2011
+14;Osteichthyes;18 - 34;0.073823793;brown;2011
+15;Osteichthyes;> 34;0.120804584;brown;2011
+16;otros;< 18;0.263729844;purple;2011
+17;otros;18 - 34;0.042935868;purple;2011
+18;otros;> 34;0.107348556;purple;2011
+19;S.pilchardus;18 - 34;0.065440518;tan             ;2011
+20;S.scombrus;18 - 34;0.243300957;darkorange2;2011
+21;S.scombrus;> 34;0.174687171;darkorange2;2011
+22;T.trachurus;18 - 34;0.143624716;violetred;2011
+1;E.encrasicolus;< 18;0.061077179;red;2012
+2;E.encrasicolus;> 34;0.050289626;red;2012
+3;Euphausiacea;< 18;0.23184342;orange;2012
+4;G.argenteus;< 18;0.11285397;aquamarine;2012
+5;M.merluccius;> 34;0.134857162;yellow;2012
+6;M.merluccius;< 18;0.071904498;yellow;2012
+7;M.poutassou;> 34;0.680456819;cyan;2012
+8;M.poutassou;< 18;0.161021655;cyan;2012
+9;M.poutassou;18 - 34;0.619127369;cyan;2012
+10;Osteichthyes;< 18;0.06038312;brown;2012
+11;Osteichthyes;18 - 34;0.077655355;brown;2012
+12;otros;< 18;0.300916158;purple;2012
+13;otros;> 34;0.071336888;purple;2012
+14;otros;18 - 34;0.109299251;purple;2012
+15;S.pilchardus;18 - 34;0.193918026;tan             ;2012
+16;T.trachurus;> 34;0.063059505;violetred;2012
+1;Euphausiacea;< 18;0.075827815;orange;2013
+2;M.merluccius;18 - 34;0.117516081;yellow;2013
+3;M.muelleri;< 18;0.060632818;green;2013
+4;M.norvegica;< 18;0.533664459;blue;2013
+5;M.poutassou;18 - 34;0.338879268;cyan;2013
+6;M.poutassou;> 34;0.539430728;cyan;2013
+7;Osteichthyes;< 18;0.129470199;brown;2013
+8;Osteichthyes;> 34;0.142391859;brown;2013
+9;Osteichthyes;18 - 34;0.150977239;brown;2013
+10;otros;> 34;0.167697919;purple;2013
+11;otros;< 18;0.200404709;purple;2013
+12;otros;18 - 34;0.032038595;purple;2013
+13;S.scombrus;> 34;0.096918996;darkorange2;2013
+14;S.scombrus;18 - 34;0.12060861;darkorange2;2013
+15;T.trachurus;18 - 34;0.239980208;violetred;2013
+16;T.trachurus;> 34;0.053560498;violetred;2013
+1;Euphausiacea;< 18;0.142586898;orange;2014
+2;G.argenteus;< 18;0.21927127;aquamarine;2014
+3;M.merluccius;< 18;0.060572174;yellow;2014
+4;M.poutassou;< 18;0.086198863;cyan;2014
+5;M.poutassou;> 34;0.412928605;cyan;2014
+6;M.poutassou;18 - 34;0.421751717;cyan;2014
+7;Osteichthyes;> 34;0.165371066;brown;2014
+8;Osteichthyes;18 - 34;0.106204235;brown;2014
+9;Osteichthyes;< 18;0.114914733;brown;2014
+10;otros;< 18;0.376456062;purple;2014
+11;otros;> 34;0.213063645;purple;2014
+12;otros;18 - 34;0.085201794;purple;2014
+13;S.pilchardus;> 34;0.146606388;tan             ;2014
+14;S.pilchardus;18 - 34;0.204915706;tan             ;2014
+15;S.scombrus;18 - 34;0.076914344;darkorange2;2014
+16;T.trachurus;18 - 34;0.105012204;violetred;2014
+17;Trachurus sp;> 34;0.062030296;violet;2014
+1;E.encrasicolus;< 18;0.307341031;red;2015
+2;E.encrasicolus;> 34;0.10560884;red;2015
+3;Euphausiacea;< 18;0.088230226;orange;2015
+4;G.argenteus;< 18;0.118042392;aquamarine;2015
+5;M.merluccius;18 - 34;0.16128513;yellow;2015
+6;M.poutassou;< 18;0.127692573;cyan;2015
+7;M.poutassou;18 - 34;0.374303834;cyan;2015
+8;M.poutassou;> 34;0.532969892;cyan;2015
+9;Osteichthyes;< 18;0.151869723;brown;2015
+10;Osteichthyes;18 - 34;0.062791746;brown;2015
+11;Osteichthyes;> 34;0.239347841;brown;2015
+12;otros;< 18;0.206824057;purple;2015
+13;otros;18 - 34;0.046492612;purple;2015
+14;otros;> 34;0.122073427;purple;2015
+15;S.pilchardus;18 - 34;0.102115056;tan             ;2015
+16;S.sarda;18 - 34;0.128770563;NA;2015
+17;S.scombrus;18 - 34;0.052152078;darkorange2;2015
+18;T.trachurus;18 - 34;0.07208898;violetred;2015
+1;E.encrasicolus;< 18;0.491579714;red;2016
+2;E.encrasicolus;> 34;0.06135293;red;2016
+3;M.norvegica;< 18;0.168066003;blue;2016
+4;M.poutassou;18 - 34;0.60502973;cyan;2016
+5;M.poutassou;> 34;0.725032975;cyan;2016
+6;Osteichthyes;< 18;0.08203106;brown;2016
+7;otros;< 18;0.258323223;purple;2016
+8;otros;> 34;0.158027134;purple;2016
+9;otros;18 - 34;0.185723105;purple;2016
+10;S.pilchardus;> 34;0.055586961;tan             ;2016
+11;S.pilchardus;18 - 34;0.064983592;tan             ;2016
+12;S.scombrus;18 - 34;0.068232771;darkorange2;2016
+13;T.trachurus;18 - 34;0.076030802;violetred;2016
+1;E.encrasicolus;< 18;0.458745079;red;2017
+2;E.encrasicolus;> 34;0.073453717;red;2017
+3;Euphausiacea;< 18;0.059934121;orange;2017
+4;M.merluccius;18 - 34;0.256300328;yellow;2017
+5;M.Myctophidae;< 18;0.073029646;NA;2017
+6;M.norvegica;< 18;0.053118556;blue;2017
+7;M.poutassou;< 18;0.133901074;cyan;2017
+8;M.poutassou;> 34;0.660281833;cyan;2017
+9;M.poutassou;18 - 34;0.327318819;cyan;2017
+10;Osteichthyes;< 18;0.171928979;brown;2017
+11;Osteichthyes;18 - 34;0.058902475;brown;2017
+12;Osteichthyes;> 34;0.08132647;brown;2017
+13;otros;< 18;0.049342546;purple;2017
+14;otros;> 34;0.130090288;purple;2017
+15;otros;18 - 34;0.106024456;purple;2017
+16;S.colias;18 - 34;0.108857739;gold1;2017
+17;S.scombrus;18 - 34;0.074560095;darkorange2;2017
+18;Trachurus sp;18 - 34;0.068036087;violet;2017
+19;Trachurus sp;> 34;0.054847692;violet;2017
+1;E.encrasicolus;< 18;0.445778792;red;2018
+2;E.encrasicolus;> 34;0.207571061;red;2018
+3;Euphausiacea;< 18;0.076498139;orange;2018
+4;M.norvegica;< 18;0.191215324;blue;2018
+5;M.poutassou;18 - 34;0.576242765;cyan;2018
+6;M.poutassou;> 34;0.561498494;cyan;2018
+7;Osteichthyes;< 18;0.122162844;brown;2018
+8;Osteichthyes;> 34;0.052787844;brown;2018
+9;Osteichthyes;18 - 34;0.157732461;brown;2018
+10;otros;> 34;0.178142601;purple;2018
+11;otros;18 - 34;0.092930167;purple;2018
+12;otros;< 18;0.164344902;purple;2018
+13;S.pilchardus;18 - 34;0.064910478;tan             ;2018
+14;T.trachurus;18 - 34;0.108184129;violetred;2018
+1;E.encrasicolus;< 18;0.376112347;red;2019
+2;E.encrasicolus;> 34;0.064947254;red;2019
+3;M.merluccius;18 - 34;0.18288988;yellow;2019
+4;M.muelleri;< 18;0.070494994;green;2019
+5;M.norvegica;< 18;0.32814238;blue;2019
+6;M.poutassou;18 - 34;0.38753925;cyan;2019
+7;M.poutassou;> 34;0.705071892;cyan;2019
+8;Osteichthyes;> 34;0.119983482;brown;2019
+9;Osteichthyes;< 18;0.151001112;brown;2019
+10;Osteichthyes;18 - 34;0.081088525;brown;2019
+11;otros;< 18;0.073414905;purple;2019
+12;otros;> 34;0.109997372;purple;2019
+13;otros;18 - 34;0.108852531;purple;2019
+14;S.pilchardus;18 - 34;0.129455186;tan             ;2019
+15;Trachurus sp;18 - 34;0.110174627;violet;2019
+1;E.encrasicolus;< 18;0.61002445;red;2020
+2;E.encrasicolus;> 34;0.211487088;red;2020
+3;E.encrasicolus;18 - 34;0.082461957;red;2020
+4;Euphausiacea;< 18;0.078239609;orange;2020
+5;M.norvegica;< 18;0.166625917;blue;2020
+6;M.poutassou;18 - 34;0.494559211;cyan;2020
+7;M.poutassou;> 34;0.727960819;cyan;2020
+8;otros;< 18;0.145110024;purple;2020
+9;otros;18 - 34;0.031922129;purple;2020
+10;otros;> 34;0.060552093;purple;2020
+11;S.pilchardus;18 - 34;0.263538213;tan             ;2020
+12;S.scombrus;18 - 34;0.12751849;darkorange2;2020
+1;E.encrasicolus;< 18;0.641338174;red;2021
+2;E.encrasicolus;> 34;0.252246026;red;2021
+3;E.encrasicolus;18 - 34;0.094373009;red;2021
+4;Euphausiacea;< 18;0.08843361;orange;2021
+5;M.merluccius;> 34;0.126123013;yellow;2021
+6;M.merluccius;18 - 34;0.177539224;yellow;2021
+7;M.poutassou;18 - 34;0.421198537;cyan;2021
+8;M.poutassou;> 34;0.528680028;cyan;2021
+9;Osteichthyes;< 18;0.103475104;brown;2021
+10;Osteichthyes;> 34;0.057878369;brown;2021
+11;otros;< 18;0.166753112;purple;2021
+12;otros;18 - 34;0.05916008;purple;2021
+13;otros;> 34;0.035072564;purple;2021
+14;S.pilchardus;18 - 34;0.247729149;tan             ;2021
+1;E.encrasicolus;< 18;0.522265051;red;2022
+2;E.encrasicolus;> 34;0.082196846;red;2022
+3;M.merluccius;18 - 34;0.091403147;yellow;2022
+4;M.norvegica;< 18;0.082645007;blue;2022
+5;M.poutassou;18 - 34;0.549425864;cyan;2022
+6;M.poutassou;> 34;0.607493542;cyan;2022
+7;Osteichthyes;< 18;0.125055984;brown;2022
+8;Osteichthyes;> 34;0.109453073;brown;2022
+9;Osteichthyes;18 - 34;0.096580593;brown;2022
+10;otros;> 34;0.088078512;purple;2022
+11;otros;< 18;0.259020742;purple;2022
+12;otros;18 - 34;0.041208876;purple;2022
+13;S.pilchardus;18 - 34;0.22138152;tan             ;2022
+14;S.pilchardus;> 34;0.111343974;tan             ;2022
+1;E.encrasicolus;< 18;0.672420364;red;2023
+2;E.encrasicolus;> 34;0.394619946;red;2023
+3;M.merluccius;18 - 34;0.155233684;yellow;2023
+4;M.poutassou;18 - 34;0.598868462;cyan;2023
+5;M.poutassou;> 34;0.32930966;cyan;2023
+6;Osteichthyes;< 18;0.195232541;brown;2023
+7;Osteichthyes;> 34;0.107792195;brown;2023
+8;Osteichthyes;18 - 34;0.058514119;brown;2023
+9;otros;> 34;0.077391482;purple;2023
+10;otros;< 18;0.132347095;purple;2023
+11;otros;18 - 34;0.076539187;purple;2023
+12;S.pilchardus;18 - 34;0.110844548;tan             ;2023
+13;S.pilchardus;> 34;0.090886716;tan             ;2023

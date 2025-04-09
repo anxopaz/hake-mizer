@@ -1,0 +1,114 @@
+#### BIOLOGICAL PARAMETERS ####
+####  for southern Hake    ####
+
+rm(list=ls())
+
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(reshape)
+library(sm)
+library(mizer)
+library(mizerExperimental)
+library(mizerMR)
+
+source( './scripts/aux_functions.R')
+
+
+# SS WGBIE24 hake data --------------------------------
+
+replist <- r4ss::SSgetoutput( dirvec = "./data/WGBIE24", getcovar = F, verbose = FALSE)[[1]]
+sspars <- replist$parameters
+grpars <- replist$Growth_Parameters
+
+
+# Model parameters ----------------------------
+
+## Growth -----------------
+
+a <- sspars['Wtlen_1_Fem_GP_1','Value'] * 1e3; a   # 0.00377 (kg to g)
+b <- sspars['Wtlen_2_Fem_GP_1','Value']; b        # 3.168 
+
+Kvb <- grpars$K[1]; Kvb
+
+Linf_f <- grpars[1,'Linf']; Linf_f
+Linf_m <- Linf_f*exp(sspars['L_at_Amax_Mal_GP_1','Value']); Linf_m
+Linf <- (Linf_f+Linf_m)/2; Linf
+
+al0_f <- grpars$A_a_L0[1]; al0_f
+al0_m <- al0_f*exp(0.6); al0_m     # 0.6 from SS control file
+al0 <- (al0_f+al0_m)/2; al0
+
+bins_no <- as.numeric(colnames(replist$natlen)[ncol(replist$natlen)]) - 1  # ceiling(Linf)
+
+
+## Maturity -------------------
+
+load( './data/Maturity_Size.RData')   # './scripts/Maturity.R' results
+
+L50_f <- MatSize['L50','Females']; L50_f    # sspars['Mat50%_Fem_GP_1','Value'] 
+L50_m <- MatSize['L50','Males']; L50_m    # aprox L50_m=L50_f*exp(sspars['L_at_Amax_Mal_GP_1','Value'])
+L50 <- (L50_m+L50_f)/2; L50
+
+L25_f <- MatSize['L25','Females']; L25_f
+L25_m <- MatSize['L25','Males']; L25_m
+L25 <- (L25_m+L25_f)/2; L25
+
+a50 <- laf( L50, Linf, Kvb, al0)
+a25 <- laf( L25, Linf, Kvb, al0)
+
+w50 <- lwf( L50, a, b)
+w25 <- lwf( L25, a, b)
+
+U <- log(3)/log(w50/w25)
+
+w_max <- lwf( bins_no, a, b)
+
+
+## Predation -----------------------------
+
+# beta: preferred predator-press mass ratio (PPMR); beta = 2^b = 8.99 (100 defalult)
+
+load( './data/Predation.RData')
+
+beta <- beta
+sigma <- sigma
+
+
+## Mizer pars -------------
+
+h <- 4.75 * Kvb * Linf^0.75; h   # max. consumption rate; h(w) = h_1*w^n; 
+# h_1 = 4.75*Kvb*linf^n; n = 0.75 (def)
+
+bio_pars <- newSingleSpeciesParams(
+  species_name="Hake", no_w=bins_no, w_max=w_max, w_mat=w50, lambda=2, h=h, beta=beta, sigma=sigma)
+
+
+# lambda: exponent of the spectrum's power law; N(w) = kappa * w^(-lambda); expected to be around 2
+
+species_params(bio_pars)$w_mat25 <- w25
+species_params(bio_pars)$U <- U
+species_params(bio_pars)$a <- a
+species_params(bio_pars)$b <- b
+species_params(bio_pars)$age_mat <- a50
+
+
+## Natural Mortality -----------------------------
+
+load( './data/Natural_Mortality.RData')   # './scripts/Natural_Mortality.R' results
+# NLS power law fit
+
+mu0_nls <- NatM_pars['nls','mu0']
+d_nls <- NatM_pars['nls','d']
+nls_mort <- mu0_nls*w(bio_pars)^(d_nls)    
+
+ext_mort(bio_pars) <- array( nls_mort, dim=c(1,bins_no))
+
+species_params(bio_pars)$d <- d_nls
+species_params(bio_pars)$M <- mu0_nls
+
+
+# Save ----------------
+
+save.image( './input/Bio_Pars.RData')
+
