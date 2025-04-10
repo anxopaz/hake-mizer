@@ -39,10 +39,6 @@ aver_y
 
 ss_biomass <- assessment$SSB[assessment$Year %in% aver_y]*1e6  # SS biomass (tonnes to grams)
 
-ssbio_tp <- c()
-for( i in 2:length(years)) 
-  ssbio_tp[names(years[i])] <- sum(assessment$SSB[assessment$Year %in% years[[i]]]*1e6)/5
-
 species_params(bio_pars)$biomass_observed <- sum(ss_biomass)/length(aver_y)
 species_params(bio_pars)$biomass_cutoff <- lwf(4,a,b)   # SS smallest size is 4 cm
 
@@ -160,15 +156,15 @@ hake_mizer@species_params$biomass_observed/ getBiomass( hake_mizer)
 
 ## ## ## ## ## ## ## ##
 
-catch_lengths<-data.frame(species="Hake",gear=rep(gear_names,each=129),
-                          length=rep(LFDc$length,9),dl=rep(1,9*129),
-                          weight=rep(w(hake_model),9),dw=rep(dw(hake_model),9),
-                          catch=c(LFD$number))
-
-tuneParams( hake_model_fitted, catch = catch_lengths)
-
-hake_model <- readParams("./output/hake_model.rds")
-hake_model <- scaleDownBackground( hake_model, 1/8000000)
+# catch_lengths<-data.frame(species="Hake",gear=rep(gear_names,each=129),
+#                           length=rep(LFDc$length,9),dl=rep(1,9*129),
+#                           weight=rep(w(hake_model),9),dw=rep(dw(hake_model),9),
+#                           catch=c(LFD$number))
+# 
+# tuneParams( hake_model_fitted, catch = catch_lengths)
+# 
+# hake_model <- readParams("./output/hake_model.rds")
+# hake_model <- scaleDownBackground( hake_model, 1/8000000)
 
 
 

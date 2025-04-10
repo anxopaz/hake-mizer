@@ -8,6 +8,7 @@
 rm(list=ls())
 
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(gridExtra)
 library(plotly)
@@ -16,6 +17,7 @@ library(sm)
 library(mizer)
 library(mizerExperimental)
 library(mizerMR)
+library(TMB)
 
 source( './scripts/aux_functions.R')
 
@@ -37,120 +39,88 @@ load( './input/Catch.RData')   # './scripts/Natural_Mortality.R' with SS's catch
 
 # MIZER model -----------------
 
-## SSB from SS ----------------
-# average over last 30 years !!
+# TMB::compile("./TMB/fit.cpp", flags = "-Og -g", clean = TRUE, verbose = TRUE)
+dyn.load( TMB::dynlib("./TMB/fit"))
 
-ssbio_tp <- c()
-for( i in 1:nrow(tps)) ssbio_tp[paste0(tps[i,1],' - ',tps[i,2])] <-
-    sum(assessment$SSB[assessment$Year %in% tps[i,1]:tps[i,2]]*1e6)/5
+gear_names <- Catch$fleet
 
-tp_names <- c()
-tp_mods <- tp_cld <- list()
+tp_mods <- list()
 
-for( i in 1:nrow(tps)){
+for( i in 2:length(years)){
   
-  tp_names[i] <- paste0(tps[i,1],' - ',tps[i,2])
-  tp_mods[[tp_names[i]]] <- bio_pars
+  ny <- names(years)[i]
+  vy <- years[[i]]
   
-  species_params(tp_mods[[tp_names[i]]])$biomass_observed <- ssbio_tp[i]
-  species_params(tp_mods[[tp_names[i]]])$biomass_cutoff <- lwf(4,a,b)
+  ssbio_tp <- sum(assessment$SSB[assessment$Year %in% vy]*1e6)/5
   
-  tp_mods[[tp_names[i]]] <- setBevertonHolt( tp_mods[[tp_names[i]]], reproduction_level = 0.001)
+  tp_mods[[ny]] <- bio_pars
   
-  tp_mods[[tp_names[i]]] <- tp_mods[[tp_names[i]]] |>
+  species_params(tp_mods[[ny]])$biomass_observed <- ssbio_tp
+  species_params(tp_mods[[ny]])$biomass_cutoff <- lwf(4,a,b)
+  
+  tp_mods[[ny]] <- setBevertonHolt( tp_mods[[ny]], reproduction_level = 0.001)
+  
+  tp_mods[[ny]] <- tp_mods[[ny]] |>
     calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady() |>
     calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady() 
-
-  tp_cld[[tp_names[i]]] <- data.frame(species="Hake",gear=rep(gear_names,each=129),
-                              length=rep(ld_tp[[tp_names[i]]]$length,9),dl=rep(1,9*129),
-                              weight=rep(w(bio_pars),9),dw=rep(dw(bio_pars),9),
-                              catch=c(ld_catch_tp[[tp_names[i]]]$catch))
   
+  gear_params( tp_mods[[ny]]) <- data.frame(
+    gear = gear_names, species = "Hake", catchability = 1,
+    sel_func = "double_sigmoid_length",
+    l50 = c(       28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
+    l25 = c(       23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
+    l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, 35.6, 58.0, 54.4, 27.3),
+    l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, 45.9, 67.9, 60.8, 28.4))
+  
+  gear_params( tp_mods[[ny]])$yield_observed <- corLFD_sum[[ny]]$catch   # == Catch$catch; != LFDs$catch
+  
+  initial_effort( tp_mods[[ny]]) <- .25
+  
+  tp_mods[[ny]] <- matchYield( tp_mods[[ny]])
+  tp_mods[[ny]] <- steady( tp_mods[[ny]])
+  
+  pre_obj <- prefit( model =  tp_mods[[ny]], catch = LFD_list[[ny]], dl = 1, yield_lambda = 1e7)
+  
+  data_list <- pre_obj$data_list
+  pars <- pre_obj$pars
+  
+  obj <- MakeADFun(data = data_list, parameters = pars, DLL = "fit")
+  
+  
+  optim_result <- nlminb(obj$par, obj$fn, obj$gr, control = list(trace = 1, eval.max = 10000, iter.max = 10000))
+  
+  tp_mods[[ny]] <- update_params(  tp_mods[[ny]], optim_result$par, data_list$min_len, data_list$max_len)
+
 }
 
 
-#- Catch data by fishing gear ----------------
 
-## TP1 
+plot_lfd( tp_mods[[1]], LFD)
 
-itp <- tp_names[1]
+plot_lfd_gear( tp_mods[[1]], LFD, 0.17)
 
-yield_gear <- Catch_tp[[itp]]
+getYield( tp_mods[[1]])
+sum( tp_mods[[1]]@gear_params$yield_observed)
 
-
-### Double sigmoid selectivity -------------
-
-ds_sel <- data.frame(
-  gear = gear_names, species = "Hake", catchability = 1, 
-  sel_func = "double_sigmoid_length",
-  l50 = c( 26.4, 27.5, 27.4, 14.1, 27.0, 28.2, 47.1, 53.4, 14.3),
-  l50_right = c( 32.4, 33.2, 38.3, 20.6, 24.6, 34.3, 57.9, 54.4, 26.7),
-  l25 = c( 24.1, 26.2, 25.5, 12.6, 26.3, 26.7, 42.5, 48.5, 12.1),
-  l25_right = c( 38, 43.5, 44.1, 27, 30.4, 41.4, 66.2, 60.8, 28.4))
-
-gear_params( tp_mods[[itp]]) <- ds_sel
-gear_params( tp_mods[[itp]])$yield_observed <- Catch_tp[[itp]]$avg_yield
-
-initial_effort( tp_mods[[itp]]) <- .25
-
-tp_mods[[itp]] <- matchYield( tp_mods[[itp]])
-tp_mods[[itp]] <- steady( tp_mods[[itp]])
-
-gear_params( tp_mods[[itp]]) <- ds_sel
-gear_params( tp_mods[[itp]])$yield_observed <- Catch_tp[[itp]]$avg_yield
-
-# tp_mods[[itp]] <- tuneParams( tp_mods[[itp]], catch = tp_cld[[itp]])
-
-
-#- Resulting model after parameter tuning and calibration --------
-
-tp_mods[[itp]] <- readParams(paste0("./output/tp_mods_",1,".rds"))
-tp_mods[[itp]] <- scaleDownBackground( tp_mods[[itp]], 1/3000000)
-
-catchabilities <- gear_params(tp_mods[[itp]])$catchability
+tp_mods[[1]]@species_params$biomass_observed
+getBiomass( tp_mods[[1]])
 
 
 
 
+# Steady ------------------
+
+# hake_mizer <- scaleDownBackground( hake_model_fitted, 1/8000000)
 # 
+# hake_mizer <- hake_mizer |>
+#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> matchYield() |> steady() |>
+#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
 # 
-# 
-# # Yield vs size plots ------------------------------------------
-# 
-# plist <- plist_mix <- list()
-# 
-# for( i in gear_names){ 
-#   
-#   plist[[i]] <- plotYieldVsSize( hake_model, species="Hake", gear=i,
-#       catch=catch_lengths, x_var="Length", return_data=FALSE) + theme_bw() +
-#     theme(legend.position = "none",axis.title.x=element_blank()) + ylim(c(0,0.13))
-#   
-#   plist_mix[[i]] <- plotYieldVsSize( mix_hake_model, species="Hake", gear=i,
-#       catch=catch_lengths, x_var="Length", return_data=FALSE) + theme_bw() +
-#     theme(legend.position = "none",axis.title.x=element_blank()) + ylim(c(0,0.13))
-# 
-# }
-# 
-# 
-# grid.arrange( plist[[1]], plist[[2]], plist[[3]], plist[[4]], plist[[5]],
-#     plist[[6]], plist[[7]], plist[[8]], plist[[9]], ncol = 3)
-# 
-# grid.arrange( plist_mix[[1]], plist_mix[[2]], plist_mix[[3]], plist_mix[[4]], plist_mix[[5]],
-#               plist_mix[[6]], plist_mix[[7]], plist_mix[[8]], plist_mix[[9]], ncol = 3)
-# 
-# 
-# pdf("./plots/selectivity.pdf", width = 10, height = 6, onefile = TRUE)
-# 
-# grid.arrange( plist[[1]], plist[[2]], plist[[3]], plist[[4]], plist[[5]],
-#     plist[[6]], plist[[7]], plist[[8]], plist[[9]], ncol = 3)
-# 
-# grid.arrange( plist_mix[[1]], plist_mix[[2]], plist_mix[[3]], plist_mix[[4]], plist_mix[[5]],
-#     plist_mix[[6]], plist_mix[[7]], plist_mix[[8]], plist_mix[[9]], ncol = 3)
-# 
-# dev.off()
-# 
-# 
-# Save ----------------------
+# plot_lfd( hake_mizer, LFD)
+# plot_lfd_gear( hake_mizer, LFD, 0.17)
+# sum( hake_mizer@gear_params$yield_observed)/ getYield( hake_mizer)
+# hake_mizer@species_params$biomass_observed/ getBiomass( hake_mizer)
 
-save.image( './output/hake_model.RData')
+
+
 
