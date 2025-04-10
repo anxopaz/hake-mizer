@@ -70,7 +70,7 @@ for( i in 2:length(years)){
   tp_mods[[ny]] <- update_params(  tp_mods[[ny]], ioptim_result$par, data_list$min_len, data_list$max_len)
   
   # ioptim_result <- optimx::optimx(iobj$par, iobj$fn, iobj$gr, control = list(trace = 1, maxit = 10000))
-  # tp_mods[[ny]] <- update_params(  tp_mods[[ny]], ioptim_result[1,], data_list$min_len, data_list$max_len)
+  # tp_mods[[ny]] <- update_params(  tp_mods[[ny]], ioptim_result[2,], data_list$min_len, data_list$max_len)
   
   tp_mods[[ny]] <- scaleDownBackground( tp_mods[[1]], 1/8000000)
 
