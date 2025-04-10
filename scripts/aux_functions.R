@@ -195,11 +195,11 @@ update_params <- function( model, pars, lmin, lmax) {
   sp <- model@species_params
   gp <- model@gear_params
   
-  logit_l50 <- pars[which(names(pars)=='logit_l50')]
-  log_ratio_left <-pars[which(names(pars)=='log_ratio_left')]
-  log_l50_right_offset <- pars[which(names(pars)=='log_l50_right_offset')]
-  log_ratio_right <- pars[which(names(pars)=='log_ratio_right')]
-  log_catchability <- pars[which(names(pars)=='log_catchability')]
+  logit_l50 <- as.numeric(pars[grep('logit_l50', names(pars))])
+  log_ratio_left <- as.numeric(pars[grep('log_ratio_left', names(pars))])
+  log_l50_right_offset <- as.numeric(pars[grep('log_l50_right_offset', names(pars))])
+  log_ratio_right <- as.numeric(pars[grep('log_ratio_right', names(pars))])
+  log_catchability <- as.numeric(pars[grep('log_catchability', names(pars))])
   
   l50 <- lmin + (lmax - lmin) * plogis(logit_l50)
   l25 <- l50 * (1 - exp(log_ratio_left))

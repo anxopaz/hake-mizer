@@ -112,6 +112,12 @@ obj_m <- MakeADFun(data = data_list_m, parameters = pars_m, DLL = "fit")
 optim_result <- nlminb(obj$par, obj$fn, obj$gr, control = list(trace = 1, eval.max = 10000, iter.max = 10000))
 optim_result_m <- nlminb(obj_m$par, obj_m$fn, obj_m$gr, control = list(trace = 1, eval.max = 10000, iter.max = 10000))
 
+# optim_result <- optimx::optimx(obj$par, obj$fn, obj$gr, control = list(trace = 1, maxit = 10000))
+# optim_result_m <- optimx::optimx(obj_m$par, obj_m$fn, obj_m$gr, control = list(trace = 1, maxit = 10000))
+# hake_model_fitted <- update_params(  hake_model, optim_result[1,], data_list$min_len, data_list$max_len)
+# hake_model_fitted_m <- update_params(  hake_model, optim_result_m[1,], data_list$min_len, data_list$max_len)
+
+
 hake_model_fitted <- update_params( hake_model, optim_result$par, data_list$min_len, data_list$max_len)
 hake_model_fitted_m <- update_params( hake_model, optim_result_m$par, data_list_m$min_len, data_list_m$max_len)
 
@@ -141,16 +147,16 @@ getBiomass( hake_model_fitted_m)
 
 # Steady ------------------
 
-hake_mizer <- scaleDownBackground( hake_model_fitted, 1/8000000)
-
-hake_mizer <- hake_mizer |>
-  calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> matchYield() |> steady() |>
-  calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
-
-plot_lfd( hake_mizer, LFD)
-plot_lfd_gear( hake_mizer, LFD, 0.17)
-sum( hake_mizer@gear_params$yield_observed)/ getYield( hake_mizer)
-hake_mizer@species_params$biomass_observed/ getBiomass( hake_mizer)
+# hake_mizer <- scaleDownBackground( hake_model_fitted, 1/8000000)
+# 
+# hake_mizer <- hake_mizer |>
+#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> matchYield() |> steady() |>
+#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
+# 
+# plot_lfd( hake_mizer, LFD)
+# plot_lfd_gear( hake_mizer, LFD, 0.17)
+# sum( hake_mizer@gear_params$yield_observed)/ getYield( hake_mizer)
+# hake_mizer@species_params$biomass_observed/ getBiomass( hake_mizer)
 
 
 
