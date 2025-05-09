@@ -167,7 +167,7 @@ getBiomass( hake_model_fitted_m)
 #                           weight=rep(w(hake_model),9),dw=rep(dw(hake_model),9),
 #                           catch=c(LFD$number))
 # 
-# tuneParams( hake_model_fitted, catch = catch_lengths)
+# tuneParams( hake_mizer, catch = catch_lengths)
 # 
 # hake_model <- readParams("./output/hake_model.rds")
 # hake_model <- scaleDownBackground( hake_model, 1/8000000)
