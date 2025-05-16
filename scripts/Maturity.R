@@ -101,6 +101,53 @@ logwmplot <- msplot[-c(1:2),] %>% ggplot( aes( x = Weight, y = Maturity, col = M
 logwmplot
 
 
+source( './scripts/aux_functions.R')
+
+replist <- r4ss::SSgetoutput( dirvec = "./data/WGBIE24", getcovar = F, verbose = FALSE)[[1]]
+
+sspars <- replist$parameters
+
+grpars <- replist$Growth_Parameters     ## no males, then:
+grpars <- readLines("./data/WGBIE24/Report.sso")
+pos <- grep("^Growth_Parameters report:45", grpars)
+grpars <- grpars[(pos + 1):(pos + 4 + 1)]
+grpars <- read.table(text = paste(grpars, collapse = "\n"), header = TRUE)
+
+
+a <- grpars$WtLen1[1] * 1e3; a   # 0.00377 (kg to g)
+b <- grpars$WtLen2[1]; b        # 3.168 
+
+Kvb <- grpars$K[1]; Kvb
+
+Linf_f <- grpars$Linf[1]; Linf_f
+Linf_m <- grpars$Linf[3]; Linf_m     # Linf_f*exp(sspars['L_at_Amax_Mal_GP_1','Value'])
+Linf <- (Linf_f+Linf_m)/2; Linf
+
+al0_f <- grpars$A_a_L0[1]; al0_f
+al0_m <- grpars$A_a_L0[3]; al0_m     # from SS report file (report:45)
+al0 <- (al0_f+al0_m)/2; al0
+
+L50_f <- MatSize['L50','Females']; L50_f    # sspars['Mat50%_Fem_GP_1','Value']
+L50_m <- MatSize['L50','Males']; L50_m    # aprox L50_m=L50_f*exp(sspars['L_at_Amax_Mal_GP_1','Value'])
+L50 <- (L50_m+L50_f)/2; L50
+
+L25_f <- MatSize['L25','Females']; L25_f
+L25_m <- MatSize['L25','Males']; L25_m
+L25 <- (L25_m+L25_f)/2; L25
+
+a50 <- laf( L50, Linf, Kvb, al0)
+a25 <- laf( L25, Linf, Kvb, al0)
+
+w50 <- lwf( L50, a, b)
+w25 <- lwf( L25, a, b)
+
+lmplot + geom_vline( xintercept = c(L50_f, L50_m, L50), linetype = c( 'dashed', 'dashed', 'solid')) +
+  geom_hline( yintercept = c(0.5), linetype = 'dashed')
+
+logwmplot + geom_vline( xintercept = c(lwf( L50_m, a, b), lwf( L50_f, a, b), w50), linetype = c( 'dashed', 'dashed', 'solid')) +
+  geom_hline( yintercept = c(0.5), linetype = 'dashed')
+
+
 pdf("./plots/data/maturity.pdf", width = 10, height = 6, onefile = TRUE)
 print(lmplot)
 print(wmplot)

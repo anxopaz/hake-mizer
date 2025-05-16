@@ -127,13 +127,15 @@ cannibal_byyear <- cannibal_complete %>%
 cannibal <- subset( by_prey_size, Prey == 'M.merluccius')
 cannibal
 
-cannibalplot <- ggplot( subset(cannibal_complete, Year>=1996), aes(x = Year, y = Percentage, fill = Size)) +
-  geom_bar(stat = "identity", position = "stack") + theme_minimal() +
-  geom_line( data = cannibal_byyear, x = Year, y = Percentage, linetype = 2) +
-  geom_hline( data=cannibal, aes( yintercept = Percentage, color = Size), linetype = 2) +
-  labs( title = "Cannibalism", fill = 'Predator Size', color = 'Average')
+cannibal2 <- subset(cannibal_complete, Year>=1996)
 
-cannibalplot
+# cannibalplot <- ggplot( subset(cannibal_complete, Year>=1996), aes(x = Year, y = Percentage, fill = Size)) +
+#   geom_bar(stat = "identity", position = "stack") + theme_minimal() +
+#   geom_line( data = cannibal_byyear, x = Year, y = Percentage, linetype = 2) +
+#   geom_hline( data=cannibal, aes( yintercept = Percentage, color = Size), linetype = 2) +
+#   labs( title = "Cannibalism", fill = 'Predator Size', color = 'Average')
+# 
+# cannibalplot
 
 cannibalplot <- ggplot( cannibal_complete, aes(x = Year, y = Percentage, fill = Size)) +
   geom_bar(stat = "identity", position = "stack") + 

@@ -18,26 +18,37 @@ source( './scripts/aux_functions.R')
 # SS WGBIE24 hake data --------------------------------
 
 replist <- r4ss::SSgetoutput( dirvec = "./data/WGBIE24", getcovar = F, verbose = FALSE)[[1]]
+
 sspars <- replist$parameters
-grpars <- replist$Growth_Parameters
+
+grpars <- replist$Growth_Parameters     ## no males, then:
+grpars <- readLines("./data/WGBIE24/Report.sso")
+pos <- grep("^Growth_Parameters report:45", grpars)
+grpars <- grpars[(pos + 1):(pos + 4 + 1)]
+grpars <- read.table(text = paste(grpars, collapse = "\n"), header = TRUE)
 
 
 # Model parameters ----------------------------
 
 ## Growth -----------------
 
-a <- sspars['Wtlen_1_Fem_GP_1','Value'] * 1e3; a   # 0.00377 (kg to g)
-b <- sspars['Wtlen_2_Fem_GP_1','Value']; b        # 3.168 
+a <- grpars$WtLen1[1] * 1e3; a   # 0.00377 (kg to g)
+b <- grpars$WtLen2[1]; b        # 3.168 
 
 Kvb <- grpars$K[1]; Kvb
 
-Linf_f <- grpars[1,'Linf']; Linf_f
-Linf_m <- Linf_f*exp(sspars['L_at_Amax_Mal_GP_1','Value']); Linf_m
+Linf_f <- grpars$Linf[1]; Linf_f
+Linf_m <- grpars$Linf[3]; Linf_m     # Linf_f*exp(sspars['L_at_Amax_Mal_GP_1','Value'])
 Linf <- (Linf_f+Linf_m)/2; Linf
 
 al0_f <- grpars$A_a_L0[1]; al0_f
-al0_m <- al0_f*exp(0.6); al0_m     # 0.6 from SS control file
+al0_m <- grpars$A_a_L0[3]; al0_m     # from SS report file (report:45)
 al0 <- (al0_f+al0_m)/2; al0
+
+r4ss::SSplotBiology(replist, subplots = 1)
+lines( 0:15, alf(0:15, Linf_f, Kvb, al0_f), col='black')
+lines( 0:15, alf(0:15, Linf_m, Kvb, al0_m), col='black')
+lines( 0:15, alf(0:15, Linf, Kvb, al0), col='black')
 
 bins_no <- as.numeric(colnames(replist$natlen)[ncol(replist$natlen)]) - 1  # ceiling(Linf)
 

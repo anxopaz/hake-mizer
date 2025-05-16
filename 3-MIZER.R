@@ -108,7 +108,6 @@ dyn.load(dynlib("./TMB/fit"))
 obj <- MakeADFun(data = data_list, parameters = pars, DLL = "fit")
 obj_m <- MakeADFun(data = data_list_m, parameters = pars_m, DLL = "fit")
 
-
 optim_result <- nlminb(obj$par, obj$fn, obj$gr, control = list(trace = 1, eval.max = 10000, iter.max = 10000))
 optim_result_m <- nlminb(obj_m$par, obj_m$fn, obj_m$gr, control = list(trace = 1, eval.max = 10000, iter.max = 10000))
 
@@ -139,7 +138,8 @@ sum( hake_model_fitted_m@gear_params$yield_observed)
 getYield( hake_model_fitted)
 getYield( hake_model_fitted_m)
 
-hake_model_fitted@species_params$biomass_observed
+hake_model_fitted_m@species_params$biomass_observed
+getBiomass( hake_model)
 getBiomass( hake_model_fitted)
 getBiomass( hake_model_fitted_m)
 
@@ -147,17 +147,30 @@ getBiomass( hake_model_fitted_m)
 
 # Steady ------------------
 
-# hake_mizer <- scaleDownBackground( hake_model_fitted, 1/8000000)
-# 
-# hake_mizer <- hake_mizer |>
-#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> matchYield() |> steady() |>
-#   calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
-# 
-# plot_lfd( hake_mizer, LFD)
-# plot_lfd_gear( hake_mizer, LFD, 0.17)
-# sum( hake_mizer@gear_params$yield_observed)/ getYield( hake_mizer)
-# hake_mizer@species_params$biomass_observed/ getBiomass( hake_mizer)
+hake_mizer <- scaleDownBackground( hake_model_fitted, 1/8000000)
 
+plotSpectra( hake_mizer, power = 2) + theme_bw() 
+
+getYield( hake_model)
+sum( hake_mizer@gear_params$yield_observed)
+getYield( hake_mizer)
+
+
+getBiomass( hake_model)
+hake_mizer@species_params$biomass_observed
+getBiomass( hake_mizer)
+
+
+hake_mizer2 <- hake_mizer |>
+  calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> matchYield() |> steady() |>
+  calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
+
+plot_lfd( hake_mizer2, LFD)
+plot_lfd_gear( hake_mizer2, LFD, 0.17)
+sum( hake_mizer2@gear_params$yield_observed)/ getYield( hake_mizer2)
+hake_mizer2@species_params$biomass_observed/ getBiomass( hake_mizer2)
+getYield( hake_mizer2)
+getBiomass( hake_mizer2)
 
 
 ## ## ## ## ## ## ## ##
