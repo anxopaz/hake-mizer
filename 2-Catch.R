@@ -65,7 +65,9 @@ surv <- c( "PtSurv", "SpSurv", "cdSurv")
 # Loop ---------------------
 
 catch_list <- catch_plot <- LFD_list <- LFDc_list <- LFD_plot <- LFD_sum <- catch_comp <- catch_table <- 
-  corLFD_list <- corLFDc_list <- corLFD_plot <- corLFD_sum <- list()
+  corLFD_list <- corLFDc_list <- corLFD_plot <- corLFD_sum <- LFD_list2 <- LFD_plot2 <- LFD_sum2 <- LFDc_list2 <- 
+  list()
+
 
 for( i in 1:length(years)){
   
@@ -161,6 +163,32 @@ for( i in 1:length(years)){
     summarise(catch = sum(weight * number, na.rm = TRUE), .groups = "drop") %>% 
     filter( !fleet %in% surv)
   
+  
+  ## Only surveys -------------
+  
+  iLFD2 <- LFD3 %>% filter(year %in% iy, fleet %in% surv)
+  
+  iLFD_summary2 <- iLFD2 %>% group_by(year, fleet, length, weight) %>%
+    summarise(total_number = sum(number, na.rm = TRUE), .groups = "drop")
+  
+  LFD_list2[[cy]] <- iLFD_summary2 %>% group_by(fleet, length, weight) %>%
+    summarise( number = mean(total_number, na.rm = TRUE), .groups = "drop")
+  
+  LFDc_list2[[cy]] <- LFD_list2[[cy]] %>% filter(fleet %in% gear_names) %>% pivot_wider( names_from = fleet, values_from = number)
+  
+  LFD_plot2[[cy]] <- LFD_list2[[cy]] %>% ggplot( aes( x = length, color = fleet)) + 
+    stat_density( aes( weight = number), adjust = 0.2, geom = "line", position = "identity") +
+    theme_bw() + scale_x_continuous( n.breaks = 20) + 
+    labs(title="Length distribution",x="length (cm)"); LFD_plot2[[cy]]
+  
+  LFD_sum2[[cy]] <- LFD_list2[[cy]] %>% group_by(fleet) %>%
+    summarise(catch = sum(weight * number, na.rm = TRUE), .groups = "drop") %>% 
+    filter( fleet %in% surv)
+  
+  pdf(paste0( plotdir, "Surv-Catch-LDs_",chn,".pdf"), width = 10, height = 6, onefile = TRUE)
+  print(LFD_plot2[[cy]])
+  dev.off()
+  
   cat('\n \n')
   
 }
@@ -184,6 +212,10 @@ dev.off()
 
 pdf(paste0( plotdir, "LFD.pdf"), width = 10, height = 6, onefile = TRUE)
 print(LFD_plot[['aver_y']])
+dev.off()
+
+pdf(paste0( plotdir, "Surveys-LFD.pdf"), width = 10, height = 6, onefile = TRUE)
+print(LFD_plot2[['aver_y']])
 dev.off()
 
 
