@@ -11,7 +11,6 @@ library(reshape)
 library(sm)
 library(mizer)
 library(mizerExperimental)
-library(mizerMR)
 library(tidyr)
 
 source( './scripts/aux_functions.R')

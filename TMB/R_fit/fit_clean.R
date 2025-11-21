@@ -15,7 +15,7 @@ library(TMB)
 
 # Data -------------
 
-load("./fit.RData")
+load("./TMB/R_fit/fit.RData")
 source( './scripts/aux_functions.R')
 
 modelo <- cannibal_hake
@@ -152,8 +152,8 @@ psi <- function( w, wmax, wmat, U, n){
   repp <- (w/wmax)^(1-n)          # repro_prop( w, wmax, n)
   mat <- (1+(w/wmat)^(-U))^(-1)   # Maturity( w, wmat, U)
   fi <- repp*mat
-  return(fi)
-}
+  return(fi)}
+
 fi <- psi( w, w_max, w_mat, U, n)
 
 Egrowth <- function( Erg, phi){ Erg*(1-phi)}

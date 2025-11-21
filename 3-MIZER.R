@@ -15,7 +15,6 @@ library(reshape)
 library(sm)
 library(mizer)
 library(mizerExperimental)
-library(mizerMR)
 library(TMB)
 
 source( './scripts/aux_functions.R')
@@ -247,17 +246,17 @@ pars_table <- rbind( pars_table, after_kappa_gamma2 = after_kappa_gamma2); pars_
 
 
 # # Old MIZER fit
-# 
+
 # ngear <- length(gear_names)
 # 
-# catch_lengths <- data.frame( species = "Hake",gear = rep(gear_names,each=bins_no), 
-#   length = rep(LFDc$length,ngear), dl = 1, weight = rep(w(hake_model),ngear), 
+# catch_lengths <- data.frame( species = "Hake",gear = rep(gear_names,each=bins_no),
+#   length = rep(LFDc$length,ngear), dl = 1, weight = rep(w(hake_model),ngear),
 #   dw = rep(dw(hake_model),ngear), catch = c(LFD$number))
 # 
-# # tuneParams( hake_mizer, catch = catch_lengths)
-# # 
-# # hake_model <- readParams("./output/hake_model.rds")
-# # hake_model <- scaleDownBackground( hake_model, 1/8000000)
+# tuneParams( hake_mizer, catch = catch_lengths)
+# 
+# hake_model <- readParams("./output/hake_model.rds")
+# hake_model <- scaleDownBackground( hake_model, 1/8000000)
 
 
 ## Save base fit----------------------

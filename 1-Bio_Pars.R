@@ -10,7 +10,6 @@ library(reshape)
 library(sm)
 library(mizer)
 library(mizerExperimental)
-library(mizerMR)
 
 source( './scripts/aux_functions.R')
 

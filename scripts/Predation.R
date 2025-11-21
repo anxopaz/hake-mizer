@@ -9,7 +9,6 @@ library(reshape)
 library(sm)
 library(mizer)
 library(mizerExperimental)
-library(mizerMR)
 
 
 # SS WGBIE24 hake data --------------------------------

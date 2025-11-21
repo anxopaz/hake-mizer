@@ -416,5 +416,6 @@ Type objective_function<Type>::operator() ()
   }
   
   REPORT(final_B);
+  REPORT(diff);
   return nll;
 }
