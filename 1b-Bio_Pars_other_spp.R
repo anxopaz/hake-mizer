@@ -75,7 +75,7 @@ spp_pars2 <- spp_pars2 %>% mutate(
 load('./data/Demersales/not_included/other_spp.RData')
 
 
-other_spp <- list( short = spp_pars2, short_fb = spp_pars, long = spps)
+other_spp <- list( short = spp_pars, short_fb = spp_pars2, long = spps)
 
 other_spp_plots <- list( length_weight = list(), von_bertalanffy = list())
 
