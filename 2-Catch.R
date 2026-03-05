@@ -1,5 +1,4 @@
-####    CATCH DATA         ####
-####  for southern Hake    ####
+#    CATCH DATA
 
 rm(list=ls())
 
@@ -19,13 +18,25 @@ plotdir <- c( './plots/data/catch/')
 dir.create( path = plotdir, showWarnings = TRUE, recursive = TRUE)
 
 
-# Biological parameters ---------------------
+# Years for average -------------
+
+aver_y <- 2014:2023
+
+years <- list( aver_y = aver_y,
+               tp1 = 1996:2000,
+               tp2 = 2008:2012,
+               tp3 = 2019:2023)
+
+
+# Southern Hake -----------------
+
+## Biological parameters ---------------------
 # 'Bio_Pars.R' script
 
 load( './input/bio_pars.RData')
 
 
-# Catch data ----------------------
+## Catch data ----------------------
 
 # catch1 <- read.csv("./data/catch/catch 1948-1981.csv", header=T)
 # catch2 <- read.csv("./data/catch/catch 1982-1993.csv", header=T)
@@ -45,26 +56,17 @@ LFD3$fleet <- gsub("_ind","",LFD3$fleet)
 LFD3$weight <- lwf(LFD3$length, a, b)
 
 
-# Years for average -------------
-
-aver_y <- 2014:2023
-
-years <- list( aver_y = aver_y,
-               tp1 = 1996:2000,
-               tp2 = 2008:2012,
-               tp3 = 2019:2023)
-
-
-# Ordered gears --------------------
+# Ordered gears
 
 gear_names <- c("Art","ptArt","bakka","cdTrw","ptTrw","pair","palangre","vol","disc","PtSurv","SpSurv","cdSurv")
 surv <- c( "PtSurv", "SpSurv", "cdSurv")
 
 
-# Loop ---------------------
+## Loop for time years ---------------------
 
-catch_list <- catch_plot <- LFD_list <- LFDc_list <- LFD_plot <- LFD_sum <- catch_comp <- catch_table <- 
-  corLFD_list <- corLFDc_list <- corLFD_plot <- corLFD_sum <- LFD_list2 <- LFD_plot2 <- LFD_sum2 <- LFDc_list2 <- 
+catch_list <- catch_plot <- LFD_list <- LFDc_list <- LFD_plot <- LFD_sum <- catch_table <- 
+  corLFD_list <- corLFDc_list <- corLFD_plot <- corLFD_sum <- 
+  LFD_list_surv <- LFD_plot_surv <- LFD_sum_surv <- LFDc_list_surv <- 
   list()
 
 
@@ -75,7 +77,9 @@ for( i in 1:length(years)){
   
   cat(cy,'=', iy[1], '-',iy[length(iy)],'\n' )
   
-  ## Catch -------------------
+  ### Commercial fleets --------------
+  
+  #### Catch -------------------
   
   icatch <- catch %>% filter(year %in% iy)
   
@@ -93,8 +97,7 @@ for( i in 1:length(years)){
     labs( title = 'Catch by fleet', y='average yield (t)') + theme_bw(); catch_plot[[cy]]
   
   
-  
-  ## LFD -------------
+  #### LFD -------------
   
   iLFD <- LFD3 %>% filter(year %in% iy, !fleet %in% surv)
   
@@ -104,7 +107,8 @@ for( i in 1:length(years)){
   LFD_list[[cy]] <- iLFD_summary %>% group_by(fleet, length, weight) %>%
     summarise( number = mean(total_number, na.rm = TRUE), .groups = "drop")
   
-  LFDc_list[[cy]] <- LFD_list[[cy]] %>% filter(fleet %in% gear_names) %>% pivot_wider( names_from = fleet, values_from = number)
+  LFDc_list[[cy]] <- LFD_list[[cy]] %>% filter(fleet %in% gear_names) %>% 
+    pivot_wider( names_from = fleet, values_from = number)
   
   LFD_plot[[cy]] <- LFD_list[[cy]] %>% ggplot( aes( x = length, color = fleet)) + 
     stat_density( aes( weight = number), adjust = 0.2, geom = "line", position = "identity") +
@@ -116,15 +120,10 @@ for( i in 1:length(years)){
     filter( !fleet %in% surv)
   
   
-  ## Plots ----------
+  ## Plots
   
   chn <- paste0( iy[1], '-',iy[length(iy)])
 
-  # pdf(paste0( plotdir, "Catch-LDs_",chn,".pdf"), width = 10, height = 6, onefile = TRUE)
-  # print(catch_plot[[cy]])
-  # print(LFD_plot[[cy]])
-  # dev.off()
-  
   print(catch_plot[[cy]])
   ggsave(paste0( plotdir, "Catch_",chn,".jpg"), width = 9, height = 7)
   
@@ -132,23 +131,23 @@ for( i in 1:length(years)){
   ggsave(paste0( plotdir, "LDs_",chn,".jpg"), width = 9, height = 7)
   
   
-  ## Check C vs LFD -----------------
+  ## Check C vs LFD
   
-  catch_comp[[cy]] <- data.frame( fleet = catch_list[[cy]]$fleet, catch_t = catch_list[[cy]]$catch/1e6, 
+  i_catch_comp <- data.frame( fleet = catch_list[[cy]]$fleet, catch_t = catch_list[[cy]]$catch/1e6, 
     catch_lfd = LFD_sum[[cy]]$catch/1e6, diff = catch_list[[cy]]$catch/LFD_sum[[cy]]$catch)
   
-  catch_table[[cy]] <- rbind( catch_comp[[cy]], data.frame( fleet = 'TOTAL (t)', catch_t = sum(catch_list[[cy]]$catch)/1e6, 
+  catch_table[[cy]] <- rbind( i_catch_comp, data.frame( fleet = 'TOTAL (t)', catch_t = sum(catch_list[[cy]]$catch)/1e6, 
     catch_lfd = sum(LFD_sum[[cy]]$catch)/1e6, diff = sum(catch_list[[cy]]$catch)/sum(LFD_sum[[cy]]$catch)))
   
   print(catch_table[[cy]])
   
   
-  ## Corrected LFD (N_LFD = N_Catch) ---------------------------
+  #### Corrected LFD ---------------------------
+  # (N_LFD = N_Catch) 
   
   iLFD <- LFD3 %>% filter(year %in% iy, !fleet %in% surv) %>%
-    left_join(catch_comp[[cy]] %>% select(fleet, diff), by = "fleet") %>%
-    mutate(number = number * diff) %>%
-    select(-diff)
+    left_join(i_catch_comp %>% select(fleet, diff), by = "fleet") %>%
+    mutate(number = number * diff) %>% select(-diff)
   
   iLFD_summary <- iLFD %>% group_by(year, fleet, length, weight) %>%
     summarise(total_number = sum(number, na.rm = TRUE), .groups = "drop")
@@ -169,32 +168,31 @@ for( i in 1:length(years)){
     filter( !fleet %in% surv)
   
   
-  ## Only surveys -------------
+  ### Surveys --------------- 
   
-  iLFD2 <- LFD3 %>% filter(year %in% iy, fleet %in% surv)
+  #### LFD -------------
   
-  iLFD_summary2 <- iLFD2 %>% group_by(year, fleet, length, weight) %>%
+  iLFD_surv <- LFD3 %>% filter(year %in% iy, fleet %in% surv)
+  
+  iLFD_summary_surv <- iLFD_surv %>% group_by(year, fleet, length, weight) %>%
     summarise(total_number = sum(number, na.rm = TRUE), .groups = "drop")
   
-  LFD_list2[[cy]] <- iLFD_summary2 %>% group_by(fleet, length, weight) %>%
+  LFD_list_surv[[cy]] <- iLFD_summary_surv %>% group_by(fleet, length, weight) %>%
     summarise( number = mean(total_number, na.rm = TRUE), .groups = "drop")
   
-  LFDc_list2[[cy]] <- LFD_list2[[cy]] %>% filter(fleet %in% gear_names) %>% pivot_wider( names_from = fleet, values_from = number)
+  LFDc_list_surv[[cy]] <- LFD_list_surv[[cy]] %>% filter(fleet %in% gear_names) %>% 
+    pivot_wider( names_from = fleet, values_from = number)
   
-  LFD_plot2[[cy]] <- LFD_list2[[cy]] %>% ggplot( aes( x = length, color = fleet)) + 
+  LFD_plot_surv[[cy]] <- LFD_list_surv[[cy]] %>% ggplot( aes( x = length, color = fleet)) + 
     stat_density( aes( weight = number), adjust = 0.2, geom = "line", position = "identity") +
     theme_bw() + scale_x_continuous( n.breaks = 20) + 
-    labs(title="Length distribution",x="length (cm)"); LFD_plot2[[cy]]
+    labs(title="Length distribution",x="length (cm)")
   
-  LFD_sum2[[cy]] <- LFD_list2[[cy]] %>% group_by(fleet) %>%
+  LFD_sum_surv[[cy]] <- LFD_list_surv[[cy]] %>% group_by(fleet) %>%
     summarise(catch = sum(weight * number, na.rm = TRUE), .groups = "drop") %>% 
     filter( fleet %in% surv)
   
-  # pdf(paste0( plotdir, "Surv-Catch-LDs_",chn,".pdf"), width = 10, height = 6, onefile = TRUE)
-  # print(LFD_plot2[[cy]])
-  # dev.off()
-  
-  print(LFD_plot2[[cy]])
+  print(LFD_plot_surv[[cy]])
   ggsave(paste0( plotdir, "Surv-Catch-LDs_",chn,".jpg"), width = 9, height = 7)
   
   cat('\n \n')
@@ -203,7 +201,7 @@ for( i in 1:length(years)){
 
 
 
-# Main Catch & LFD -----------
+## Average years -----------
 
 Catch <- catch_list[['aver_y']]
 LFD <- LFD_list[['aver_y']]
@@ -223,23 +221,37 @@ print(LFD_plot[['aver_y']])
 dev.off()
 
 pdf(paste0( plotdir, "Surveys-LFD.pdf"), width = 10, height = 6, onefile = TRUE)
-print(LFD_plot2[['aver_y']])
+print(LFD_plot_surv[['aver_y']])
 dev.off()
 
+
+
+## Comparison (Catch - LFDs) ------------------
+
+catch_table$aver_y
 
 data.frame( fleet = Catch$fleet, catch_t = Catch$catch/1e6, 
             catch_lfd = corLFDs$catch/1e6, diff = Catch$catch/corLFDs$catch)
 
 
+## Save --------------------
+
+# save( catch_list, Catch, LFD_list, LFDc_list, LFDs, LFD_sum, LFD, LFDc, catch_table, 
+#       aver_y, years, corLFD_list, corLFDc_list, corLFDs, corLFD_sum, corLFD, corLFDc, 
+#       LFD_list_surv, LFD_plot_surv, LFD_sum_surv, LFDc_list_surv,
+#       file = './input/Catch.RData')
+
+save( aver_y, years, 
+      corLFD_list, corLFDc_list, corLFD_sum, 
+      corLFD, corLFDc, corLFDs, 
+      LFD_list_surv, LFD_sum_surv, LFDc_list_surv,
+      file = './input/Catch.RData')
+
+
+
 # Other spp --------------------------
 
-N_to_year <- function(x) { 
-  n <- as.integer(sub("^N", "", x))
-  ifelse(n >= 90, 1900 + n, 2000 + n)
-}
-
-
-## LFDs ----------------------
+## LFD ----------------------
 
 length_dir  <- './data/Demersales/length'
 length_files <- list.files(length_dir, pattern = "^DatTalCatch", full.names = TRUE)
@@ -285,6 +297,10 @@ p <- LFD_spp_tp$aver_y %>% ggplot( aes( x = length, color = spp)) +
   theme_bw() + scale_x_continuous( n.breaks = 20) + 
   labs(title='Length distribution',y='Density',x='Length (cm)',color='Species')
 
+pdf(paste0( plotdir, "LFD_other_spp.pdf"), width = 10, height = 6, onefile = TRUE)
+print(p)
+dev.off()
+
 p_plotly <- plotly::ggplotly(p)
 
 for(i in seq_along(p_plotly$x$data)){ p_plotly$x$data[[i]]$visible <- "legendonly"}
@@ -327,45 +343,8 @@ Catch_spp_tp <- lapply(names(years), function(p) {
 names(Catch_spp_tp) <- names(years)
 
 
-## Length - Weight relationship ------------------------
-
-length_weight <- data.frame( readxl::read_excel( "./data/Demersales/length-weight.xlsx"))
-
-L_grid <- 1:120
-
-LW_df <- length_weight %>%
-  select(red, a, b) %>%
-  tidyr::expand_grid(length = L_grid) %>%
-  mutate(weight = a * length^b)
-
-wlp <- LW_df %>%
-  ggplot(aes(x = weight, y = length, color = red)) +
-  geom_line(linewidth = 1) + theme_bw() + scale_x_continuous(n.breaks = 20) +
-  labs( title = "Length–Weight relationship", x = "Weight (g)", y = "Length (cm)",
-    color = "Species")
-
-
-wlp_plotly <- ggplotly(wlp)
-for(i in seq_along(wlp_plotly$x$data)){ wlp_plotly$x$data[[i]]$visible <- "legendonly"}
-
-lwp <- LW_df %>%
-  ggplot(aes(x = length, y = weight, color = red)) +
-  geom_line(linewidth = 1) + theme_bw() + scale_x_continuous(n.breaks = 20) +
-  labs( title = "Length–Weight relationship", x = "Length (cm)", y = "Weight (g)",
-        color = "Species")
-
-
-lwp_plotly <- ggplotly(lwp)
-for(i in seq_along(lwp_plotly$x$data)){ lwp_plotly$x$data[[i]]$visible <- "legendonly"}
-
-wlp_plotly
-lwp_plotly
-
 
 # Save --------------------
 
-save( catch_list, Catch, LFD_list, LFDc_list, LFDs, LFD_sum, LFD, LFDc, catch_comp, catch_table, 
-      aver_y, years, corLFD_list, corLFDc_list, corLFDs, corLFD_sum, corLFD, corLFDc, 
-      LFD_list_spp, LFD_spp, LFD_spp_tp, Catch_list_spp, Catch_spp, Catch_spp_tp,
-      length_weight, file = './input/Catch.RData')
-
+save( LFD_list_spp, LFD_spp, LFD_spp_tp, Catch_list_spp, Catch_spp, Catch_spp_tp,
+      file = './input/Catch_spp.RData')

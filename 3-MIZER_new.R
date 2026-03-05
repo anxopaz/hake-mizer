@@ -287,59 +287,59 @@ tp_mods <- list()
 years <- list( years[[2]], years[[3]], years[[4]])
 for(i in 1:length(years)) names(years)[[i]] <- paste0( years[[i]][1],' - ', years[[i]][5]) 
 
-for( i in 1:length(years)){
-  
-  ny <- names(years)[i]
-  vy <- years[[i]]
-  ychar <- paste0( vy[1],'-',vy[length(vy)])
-  
-  ssbio_tp <- sum(assessment[,quantity][assessment$Year %in% vy]*1e6)/length(vy)
-  
-  itp_mod <- hake_mizer
-  
-  species_params(itp_mod)$biomass_observed <- ssbio_tp
-  
-  itp_mod <- itp_mod |>
-    calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady() |>
-    calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
-  
-  gear_params( itp_mod)$yield_observed <- corLFD_sum[[i]]$catch
-  
-  tp_mods[[ychar]] <- MIZER( model =  itp_mod, catch = corLFD_list[[i]], compiler = compiler,
-                             plot = T, plot_dir = paste0(tpdir,ychar,'/'))
-  
-  plotSpectra( tp_mods[[ychar]]) + theme_bw()
-  ggsave(paste0(tpdir,ychar,'/spectra.jpg'), width = 9, height = 7) 
-  
-  plotSpectra( tp_mods[[ychar]], power = 2) + theme_bw()
-  ggsave(paste0(tpdir,ychar,'/spectra2.jpg'), width = 9, height = 7) 
-  
-}
-
-
-tpdf <- NULL
-for(i in names(tp_mods)){ tpdf <- rbind( tpdf, spf( tp_mods[[i]], name = i))}
-
-ggplot( tpdf %>% filter(w>10), aes( x = w, y = value, color = Model)) + 
-  geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
-  labs ( x = 'Weigth [g]', y = 'Biomass density', color = 'Period')
-
-ggsave( paste0( tpdir, 'spectra_comparison.jpg'), width = 12, height = 7)
-ggsave( paste0( tpdir, 'spectra_comparison_ppt.jpg'), width = 6, height = 4)
-
-ggplot( tpdf %>% filter(w>10), aes( x = w, y = value2, color = Model)) + 
-  geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
-  labs ( x = 'Weigth [g]', y = 'Biomass density [g]', color = 'Period')
-
-ggsave( paste0( tpdir, 'spectra_comparison2.jpg'), width = 12, height = 7)
-ggsave( paste0( tpdir, 'spectra_comparison2_ppt.jpg'), width = 6, height = 4)
-
-
-tp_table <- matrix( NA, nrow = length(tp_mods), ncol = length(all_pars), 
-                    dimnames = list( names(tp_mods), all_pars))
-
-for(i in names(tp_mods)){ tp_table[i,] <- parsf( tp_mods[[i]])}
-tp_table
+# for( i in 1:length(years)){
+#   
+#   ny <- names(years)[i]
+#   vy <- years[[i]]
+#   ychar <- paste0( vy[1],'-',vy[length(vy)])
+#   
+#   ssbio_tp <- sum(assessment[,quantity][assessment$Year %in% vy]*1e6)/length(vy)
+#   
+#   itp_mod <- hake_mizer
+#   
+#   species_params(itp_mod)$biomass_observed <- ssbio_tp
+#   
+#   itp_mod <- itp_mod |>
+#     calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady() |>
+#     calibrateBiomass() |> matchBiomasses() |> matchGrowth() |> steady()
+#   
+#   gear_params( itp_mod)$yield_observed <- corLFD_sum[[i]]$catch
+#   
+#   tp_mods[[ychar]] <- MIZER( model =  itp_mod, catch = corLFD_list[[i]], compiler = compiler,
+#                              plot = T, plot_dir = paste0(tpdir,ychar,'/'))
+#   
+#   plotSpectra( tp_mods[[ychar]]) + theme_bw()
+#   ggsave(paste0(tpdir,ychar,'/spectra.jpg'), width = 9, height = 7) 
+#   
+#   plotSpectra( tp_mods[[ychar]], power = 2) + theme_bw()
+#   ggsave(paste0(tpdir,ychar,'/spectra2.jpg'), width = 9, height = 7) 
+#   
+# }
+# 
+# 
+# tpdf <- NULL
+# for(i in names(tp_mods)){ tpdf <- rbind( tpdf, spf( tp_mods[[i]], name = i))}
+# 
+# ggplot( tpdf %>% filter(w>10), aes( x = w, y = value, color = Model)) + 
+#   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
+#   labs ( x = 'Weigth [g]', y = 'Biomass density', color = 'Period')
+# 
+# ggsave( paste0( tpdir, 'spectra_comparison.jpg'), width = 12, height = 7)
+# ggsave( paste0( tpdir, 'spectra_comparison_ppt.jpg'), width = 6, height = 4)
+# 
+# ggplot( tpdf %>% filter(w>10), aes( x = w, y = value2, color = Model)) + 
+#   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
+#   labs ( x = 'Weigth [g]', y = 'Biomass density [g]', color = 'Period')
+# 
+# ggsave( paste0( tpdir, 'spectra_comparison2.jpg'), width = 12, height = 7)
+# ggsave( paste0( tpdir, 'spectra_comparison2_ppt.jpg'), width = 6, height = 4)
+# 
+# 
+# tp_table <- matrix( NA, nrow = length(tp_mods), ncol = length(all_pars), 
+#                     dimnames = list( names(tp_mods), all_pars))
+# 
+# for(i in names(tp_mods)){ tp_table[i,] <- parsf( tp_mods[[i]])}
+# tp_table
 
 
 

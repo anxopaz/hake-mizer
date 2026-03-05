@@ -137,6 +137,12 @@ double_normal_sel <- function( w, params) {
 }
 
 
+N_to_year <- function(x) { 
+  n <- as.integer(sub("^N", "", x))
+  ifelse(n >= 90, 1900 + n, 2000 + n)
+}
+
+
 ### Energies
 
 getEnergy <- function( model, return_df = FALSE, log = FALSE){
