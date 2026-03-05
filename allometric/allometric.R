@@ -7,11 +7,11 @@ library(mizerExperimental)
 
 # We will use functions from the mizerEcopath package. 
 # That package is still undergoing rapid change
-install_github("gustavdelius/mizerEcopath")
+# remotes::install_github("gustavdelius/mizerEcopath")
 library(mizerEcopath)
 
 source( './scripts/aux_functions.R')
-
+ 
 # Load data ----
 
 # Biological parameters
@@ -26,8 +26,7 @@ load( './input/Hake_SS_Data.RData')   # './scripts/WGBIE24.R' WGBIE assessment r
 # Species params ----
 
 sp <- bio_pars@species_params |>
-    select(species, w_mat, age_mat, w_max, a, b, n,
-           pred_kernel_type, beta, sigma)
+    select(species, w_mat, age_mat, w_max, a, b, n, pred_kernel_type, beta, sigma)
 
 # Biomass
 quantity <- 'biomass' # 'SSB'
@@ -82,6 +81,35 @@ hake_model <- matchCatch(hake_model, catch = catch)
 
 plotYieldVsSize(hake_model, x_var = "Length", catch = catch)
 
+
+# Same for different gears
+
+catch2 <- corLFD |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear)
+
+gear_names <- unique( catch2$gear)
+
+gp <- data.frame(
+       gear = gear_names, 
+    species = "Hake",
+   sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+        l50 = c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
+        l25 = c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
+  l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
+  l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
+  yield_observed = corLFDs$catch,
+  catchability = corLFDs$catch/sum(corLFDs$catch))
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+source('./allometric/new_funs.R')
+hake_model <- matchCatch(hake_model, catch = catch2)
+plotYieldVsSizeByGear(hake_model, catch = catch2)
+
+
 # Set metabolic loss rate ----
 # So far we ran the model without metabolic loss. If we now introduce this loss,
 # we have to increase the encounter rate to make up for this.
@@ -133,6 +161,4 @@ bio12$Cannibalism <- "Off"
 bio_cannibal12 <- melt(getBiomass(sim_cannibal12))
 bio_cannibal12$Cannibalism <- "On"
 bio <- rbind(bio12, bio_cannibal12)
-ggplot(bio) +
-    geom_line(aes(x = time, y = value, 
-                  colour = Cannibalism)) 
+ggplot(bio) + geom_line(aes(x = time, y = value, colour = Cannibalism)) 

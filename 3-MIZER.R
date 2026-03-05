@@ -114,37 +114,39 @@ compiler <- !file.exists( "./TMB/fit.o")
 only_sel_mod <- MIZER( model = hake_model, catch = corLFD, compiler = compiler,
                        plot = T, plot_dir = paste0( pd_name, 'only_sel/'))
 
-sel_and_gamma_mod <- MIZER( model = hake_model, catch = corLFD, compiler = compiler,
-                            fixed_sel = F, nofixed = c('gamma'),
-                            plot = T, plot_dir = paste0( pd_name, 'sel_and_gamma/'))
-
-only_gamma_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
-                         fixed_sel = T, nofixed = c('gamma'),
-                         plot = T, plot_dir = paste0( pd_name, 'only_gamma/'))
-
-only_others_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
-                          fixed_sel = T, nofixed = c( 'gamma','q','n','ks','p','k','alpha'),
-                          plot = T, plot_dir = paste0( pd_name, 'only_others/'))
-
-only_others_resources_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
-                                    fixed_sel = T, nofixed = c( 'gamma','q','n','ks','p','k','alpha','kappa','lambda'),
-                                    plot = T, plot_dir = paste0( pd_name, 'only_others_resources/'))
-
-only_resources_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
-                             fixed_sel = T, nofixed = c( 'kappa','lambda'),
-                             plot = T, plot_dir = paste0( pd_name, 'only_resources/'))
-
-all_fitted_mod <- MIZER( model = hake_model, catch = corLFD, compiler = compiler,
-                         fixed_sel = F, nofixed = c( 'gamma','q','n','ks','p','k','alpha','kappa','lambda'),
-                         plot = T, plot_dir = paste0( pd_name, 'all_fitted/'))
+# sel_and_gamma_mod <- MIZER( model = hake_model, catch = corLFD, compiler = compiler,
+#                             fixed_sel = F, nofixed = c('gamma'),
+#                             plot = T, plot_dir = paste0( pd_name, 'sel_and_gamma/'))
+# 
+# only_gamma_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
+#                          fixed_sel = T, nofixed = c('gamma'),
+#                          plot = T, plot_dir = paste0( pd_name, 'only_gamma/'))
+# 
+# only_others_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
+#                           fixed_sel = T, nofixed = c( 'gamma','q','n','ks','p','k','alpha'),
+#                           plot = T, plot_dir = paste0( pd_name, 'only_others/'))
+# 
+# only_others_resources_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
+#                                     fixed_sel = T, nofixed = c( 'gamma','q','n','ks','p','k','alpha','kappa','lambda'),
+#                                     plot = T, plot_dir = paste0( pd_name, 'only_others_resources/'))
+# 
+# only_resources_mod <- MIZER( model = only_sel_mod, catch = corLFD, compiler = compiler,
+#                              fixed_sel = T, nofixed = c( 'kappa','lambda'),
+#                              plot = T, plot_dir = paste0( pd_name, 'only_resources/'))
+# 
+# all_fitted_mod <- MIZER( model = hake_model, catch = corLFD, compiler = compiler,
+#                          fixed_sel = F, nofixed = c( 'gamma','q','n','ks','p','k','alpha','kappa','lambda'),
+#                          plot = T, plot_dir = paste0( pd_name, 'all_fitted/'))
 
 
 ### Comparison --------------------
 
-mod_list <- list( only_sel = only_sel_mod, sel_and_gamma = sel_and_gamma_mod,
-                  only_gamma = only_gamma_mod, only_others = only_others_mod, 
-                  only_others_resources = only_others_resources_mod,
-                  only_resources = only_resources_mod, all_fitted = all_fitted_mod)
+mod_list <- list( only_sel = only_sel_mod   # ,
+                  # sel_and_gamma = sel_and_gamma_mod,
+                  # only_gamma = only_gamma_mod, only_others = only_others_mod, 
+                  # only_others_resources = only_others_resources_mod,
+                  # only_resources = only_resources_mod, all_fitted = all_fitted_mod
+                  )
 
 nofixed <- c( 'gamma', 'q', 'n', 'ks', 'p', 'k', 'alpha')
 res_pars <- c( 'kappa', 'lambda')
@@ -166,25 +168,25 @@ ggplot( spectradf, aes( x = w, y = value, color = Model)) +
   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
   labs ( x = 'Weigth [g]', y = 'Biomass density', color = 'Model')
 
-ggsave( paste0( pd_name, 'spectra_comparison.jpg'), width = 12, height = 7)
+# ggsave( paste0( pd_name, 'spectra_comparison.jpg'), width = 12, height = 7)
 
 ggplot( spectradf %>% filter(w>10), aes( x = w, y = value, color = Model)) + 
   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
   labs ( x = 'Weigth [g]', y = 'Biomass density', color = 'Model')
 
-ggsave( paste0( pd_name, 'spectra_comparisonx10.jpg'), width = 12, height = 7)
+# ggsave( paste0( pd_name, 'spectra_comparisonx10.jpg'), width = 12, height = 7)
 
 ggplot( spectradf, aes( x = w, y = value2, color = Model)) + 
   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
   labs ( x = 'Weigth [g]', y = 'Biomass density [g]', color = 'Model')
 
-ggsave( paste0( pd_name, 'spectra_comparison2.jpg'), width = 12, height = 7)
+# ggsave( paste0( pd_name, 'spectra_comparison2.jpg'), width = 12, height = 7)
 
 ggplot( spectradf %>% filter(w>10), aes( x = w, y = value2, color = Model)) + 
   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
   labs ( x = 'Weigth [g]', y = 'Biomass density [g]', color = 'Model')
 
-ggsave( paste0( pd_name, 'spectra_comparison2x10.jpg'), width = 12, height = 7)
+# ggsave( paste0( pd_name, 'spectra_comparison2x10.jpg'), width = 12, height = 7)
 
 
 
@@ -208,6 +210,12 @@ ggsave( paste0( pd_name, 'base_pluskappa2.jpg'), width = 12, height = 7)
 
 rescaled <- parsf( hake_mizer)
 pars_table <- rbind( pars_table, rescaled = rescaled); pars_table
+
+plot_lfd_gear( hake_mizer, corLFD)
+
+sim <- project(hake_mizer, t_max = 250)
+plotBiomass(sim)
+getBiomass(hake_mizer)/getBiomass(sim)[250]
 
 
 ## Background rescaled fit ---------------------

@@ -15,7 +15,7 @@ library(tidyr)
 
 source( './scripts/aux_functions.R')
 
-plotdir <- paste0( './plots/data/catch/')
+plotdir <- c( './plots/data/catch/')
 dir.create( path = plotdir, showWarnings = TRUE, recursive = TRUE)
 
 
@@ -52,8 +52,7 @@ aver_y <- 2014:2023
 years <- list( aver_y = aver_y,
                tp1 = 1996:2000,
                tp2 = 2008:2012,
-               tp3 = 2019:2023,
-               aver_y2 = aver_y-20)
+               tp3 = 2019:2023)
 
 
 # Ordered gears --------------------
@@ -230,11 +229,143 @@ dev.off()
 
 data.frame( fleet = Catch$fleet, catch_t = Catch$catch/1e6, 
             catch_lfd = corLFDs$catch/1e6, diff = Catch$catch/corLFDs$catch)
+
+
+# Other spp --------------------------
+
+N_to_year <- function(x) { 
+  n <- as.integer(sub("^N", "", x))
+  ifelse(n >= 90, 1900 + n, 2000 + n)
+}
+
+
+## LFDs ----------------------
+
+length_dir  <- './data/Demersales/length'
+length_files <- list.files(length_dir, pattern = "^DatTalCatch", full.names = TRUE)
+
+LFD_list_spp <- list()
+LFD_long_spp <- list()
+
+for (f in length_files) {
   
+  spp <- basename(f)
+  spp <- sub("^DatTalCatch", "", spp)
+  spp <- sub("\\.csv$", "", spp)
+  
+  dat <- read.csv(f, row.names = 1, check.names = FALSE)
+  dat <- dat |> as.data.frame() |> mutate(length = as.numeric(rownames(dat)))
+  
+  year_cols <- setdiff(names(dat), "length")
+  year_num  <- N_to_year(year_cols)
+  
+  dat <- dat |> select(length, all_of(year_cols))
+  
+  names(dat) <- c("length", sort(year_num))
+  
+  LFD_list_spp[[spp]] <- dat
+  
+  LFD_long_spp[[spp]] <- dat |>
+    pivot_longer( -length, names_to  = "year", values_to = "value") |>
+    mutate( year = as.integer(year), spp  = spp) |> arrange(spp, year, length)
+}
+
+LFD_spp <- bind_rows(LFD_long_spp)
+
+LFD_spp_tp <- lapply(names(years), function(p) {
+  yrs <- years[[p]]
+  LFD_spp |> filter(year %in% yrs) |> group_by(spp, length) |>
+    summarise(value = mean(value, na.rm = TRUE),.groups = "drop")
+})
+
+names(LFD_spp_tp) <- names(years)
+
+p <- LFD_spp_tp$aver_y %>% ggplot( aes( x = length, color = spp)) + 
+  stat_density( aes( weight = value), adjust = 0.2, geom = "line", position = "identity") +
+  theme_bw() + scale_x_continuous( n.breaks = 20) + 
+  labs(title='Length distribution',y='Density',x='Length (cm)',color='Species')
+
+p_plotly <- plotly::ggplotly(p)
+
+for(i in seq_along(p_plotly$x$data)){ p_plotly$x$data[[i]]$visible <- "legendonly"}
+
+p_plotly
+
+
+
+## Catch -------------------------
+
+catch_dir   <- "./data/Demersales/catch"
+catch_files <- list.files(catch_dir, pattern = "^DatCatch", full.names = TRUE)
+
+Catch_list_spp <- list()
+Catch_all_spp <- list()
+
+for (f in catch_files) {
+  
+  spp <- basename(f)
+  spp <- sub("^DatCatch|\\.csv$", "", spp)
+  spp <- sub("\\.csv$", "", spp)
+  
+  dat <- read.csv(f, stringsAsFactors = FALSE, )[,-1]
+  dat <- dat |> mutate( year = N_to_year(camp)) |> select(-camp)
+ 
+  Catch_list_spp[[spp]] <- dat
+  Catch_all_spp[[spp]] <- dat |> mutate(spp = spp)
+  
+}
+
+Catch_spp <- bind_rows(Catch_all_spp)
+
+Catch_spp_tp <- lapply(names(years), function(p) {
+  yrs <- years[[p]]
+  Catch_spp |> filter(year %in% yrs) |> group_by(spp) |>
+    summarise( weight = mean(weight, na.rm = TRUE), number = mean(number, na.rm = TRUE),
+      .groups = "drop")
+})
+
+names(Catch_spp_tp) <- names(years)
+
+
+## Length - Weight relationship ------------------------
+
+length_weight <- data.frame( readxl::read_excel( "./data/Demersales/length-weight.xlsx"))
+
+L_grid <- 1:120
+
+LW_df <- length_weight %>%
+  select(red, a, b) %>%
+  tidyr::expand_grid(length = L_grid) %>%
+  mutate(weight = a * length^b)
+
+wlp <- LW_df %>%
+  ggplot(aes(x = weight, y = length, color = red)) +
+  geom_line(linewidth = 1) + theme_bw() + scale_x_continuous(n.breaks = 20) +
+  labs( title = "Length–Weight relationship", x = "Weight (g)", y = "Length (cm)",
+    color = "Species")
+
+
+wlp_plotly <- ggplotly(wlp)
+for(i in seq_along(wlp_plotly$x$data)){ wlp_plotly$x$data[[i]]$visible <- "legendonly"}
+
+lwp <- LW_df %>%
+  ggplot(aes(x = length, y = weight, color = red)) +
+  geom_line(linewidth = 1) + theme_bw() + scale_x_continuous(n.breaks = 20) +
+  labs( title = "Length–Weight relationship", x = "Length (cm)", y = "Weight (g)",
+        color = "Species")
+
+
+lwp_plotly <- ggplotly(lwp)
+for(i in seq_along(lwp_plotly$x$data)){ lwp_plotly$x$data[[i]]$visible <- "legendonly"}
+
+wlp_plotly
+lwp_plotly
+
 
 # Save --------------------
 
 save( catch_list, Catch, LFD_list, LFDc_list, LFDs, LFD_sum, LFD, LFDc, catch_comp, catch_table, 
       aver_y, years, corLFD_list, corLFDc_list, corLFDs, corLFD_sum, corLFD, corLFDc, 
-      file = './input/Catch.RData')
+      LFD_list_spp, LFD_spp, LFD_spp_tp, Catch_list_spp, Catch_spp, Catch_spp_tp,
+      length_weight, file = './input/Catch.RData')
 

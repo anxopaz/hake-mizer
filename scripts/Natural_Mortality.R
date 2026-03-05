@@ -187,6 +187,28 @@ print(lognmplot)
 dev.off()
 
 
-save( NatM, NatM_pars, file = './data/Natural_Mortality.RData')
+## w50
+
+load( './data/Maturity_Size.RData')   # source( './scripts/Maturity.R')
+
+w50 <- (lwf( MatSize['L50','Males'],a,b) + lwf( MatSize['L50','Females'],a,b)) /2
+wrel <- M_ext$wrel <- M_ext$Weight/w50
+
+fit <- nls( Mortality ~ I( mu0 * wrel^d), data = M_ext, start = list( mu0=mu0_lm, d=d_lm))
+fitlm <- lm( log10(Mortality) ~ log10(wrel), data = M_ext)
+
+mu0_nls <- coef(fit)['mu0'] 
+d_nls <- coef(fit)['d']
+mu0_lm <- 10^coef(fitlm)['(Intercept)']
+d_lm <- coef(fitlm)['log10(wrel)']
+
+NatM_rel <- M_ext %>% 
+  mutate( M_fit = mu0_nls*(wrel)^d_nls) %>%
+  mutate( M_fit.lm = mu0_lm*(wrel)^d_lm)
+
+NatM_pars_rel <- matrix( c(mu0_nls, d_nls, mu0_lm, d_lm), byrow=T, 2, 2, dimnames = list( c('nls','lm'), c('mu0','d')))
+NatM_pars_rel
+
+save( NatM, NatM_rel, NatM_pars, NatM_pars_rel, file = './data/Natural_Mortality.RData')
 
 

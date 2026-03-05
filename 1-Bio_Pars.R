@@ -10,6 +10,8 @@ library(reshape)
 library(sm)
 library(mizer)
 library(mizerExperimental)
+library(rfishbase)
+library(tidyr)
 
 source( './scripts/aux_functions.R')
 
@@ -114,7 +116,11 @@ load( './data/Natural_Mortality.RData')   # './scripts/Natural_Mortality.R' resu
 
 mu0 <- NatM_pars['nls','mu0']
 d <- NatM_pars['nls','d']
-mort <- mu0*w(bio_pars)^(d)    
+mort <- mu0*w(bio_pars)^(d) 
+
+mu0_rel <- NatM_pars_rel['nls','mu0']
+d_rel <- NatM_pars_rel['nls','d']
+mort_rel <- mu0*(w(bio_pars)/w50)^(d) 
 
 ext_mort(bio_pars) <- array( mort, dim=c(1,bins_no))
 
@@ -133,4 +139,5 @@ rm_functions <- function( envir = globalenv()) {
 rm_functions()
 
 save.image( './input/Bio_Pars.RData')
+
 
