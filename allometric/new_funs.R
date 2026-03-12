@@ -1,7 +1,7 @@
 prepare_data <- function(params, species = 1, catch,
                          yield_lambda = 1, production_lambda = 1) {
   
-  # Validate MizerParams object and extract data for the selected species ----
+  # Validate MizerParams object and extract data for the selected species
   params <- validParams(params)
   species <- valid_species_arg(params, species, error_on_empty = TRUE)
   if (length(species) > 1) {
@@ -18,7 +18,7 @@ prepare_data <- function(params, species = 1, catch,
   # }
   # catch <- valid_catch(catch, species)              # Not true now
   
-  # Validate catch data frame and extract data for the selected species ----
+  # Validate catch data frame and extract data for the selected species
   if (nrow(catch) == 0) {
     use_counts <- 0
     counts <- numeric(0)
@@ -33,7 +33,7 @@ prepare_data <- function(params, species = 1, catch,
       stop("For ", species, " you have observed catches of larger weight than the `w_max` that you specified.")
     }
     
-    # Fill in missing zero counts ----
+    # Fill in missing zero counts
     
     # Sort bins
     # catch <- catch[order(catch$length), ]   # better as follows for different gears
@@ -68,7 +68,7 @@ prepare_data <- function(params, species = 1, catch,
       left_join(observed_bins, by = c("gear","bin_start","bin_end")) |>
       mutate(count = tidyr::replace_na(count, 0))  # different fill for missing data
     
-    # Extract counts, bin boundaries and widths ----
+    # Extract counts, bin boundaries and widths
     counts <- full_bins |> tidyr::pivot_wider(names_from = gear, values_from = count, values_fill = 0)
     counts <- as.matrix(counts)[,-c(1:2)]    # for different gears
     l_bin_boundaries <- unique(c(full_bins$bin_start, full_bins$bin_end))
@@ -131,7 +131,7 @@ prepare_data <- function(params, species = 1, catch,
   } else {
     yield <- gps$yield_observed
   }
-  # Prepare data list for TMB ----
+  # Prepare data list for TMB
   data <- list(
     use_counts = use_counts,
     counts = counts,
@@ -362,10 +362,15 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   data <- prepare_data(params, species = species, catch,
                        yield_lambda = yield_lambda,
                        production_lambda = production_lambda)
+  
   if (is.null(data)) {
     warning(species, " can not be matched because neither catches nor production are given.")
     return(params)
   }
+  
+  if(is.vector(data$counts)){ 
+    data$counts <- as.matrix(data$counts, ncol=1)
+    colnames(data$counts) <- params@gear_params$gear}
   
   sp <- species_params(params)
   gp <- gear_params(params)
@@ -403,7 +408,7 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   mu_mat_max <- g_mat / w_mat * (lambda - sps$n)
   lower_bounds <- upper_bounds <- NULL
   lower_bounds <- c(
-    rep(-10, length(data$sel_func))*4,    # l50, ratio_left, l50_right_offset, ratio_right
+    rep(-10, length(data$sel_func)*4),    # l50, ratio_left, l50_right_offset, ratio_right
     0.2, rep(-10, length(data$sel_func))) # mu_mat and log_catchability
   
   upper_bounds <- c( rep(10, length(data$sel_func)*4), mu_mat_max, rep(10, length(data$sel_func)))
@@ -526,7 +531,8 @@ update_params <- function(params, species = 1, pars, data) {
   params@species_params[sp_select, ] <- sps
   params <- setReproduction(params)
   
-  # Calculate the new steady state ----
+  # Calculate the new steady state
+  
   params <- mizerEcopath::steadySingleSpecies(params, species = species)
   # Rescale it to get the observed biomass
   params <- matchBiomasses(params, species = species)

@@ -189,6 +189,34 @@ getEnergy <- function( model, return_df = FALSE, log = FALSE){
 }
 
 
+metab_and_dens <- function( model, bio_pars, rep_level = 0.6, feed_level = 0.6, res_level = 1/2){
+  
+  # Set metabolic loss rate
+  
+  # So far we ran the model without metabolic loss. If we now introduce this loss, we have to increase the encounter rate to make up for this.
+  species_params(model)$ks <- bio_pars@species_params$ks
+  ext_encounter(model) <- ext_encounter(model) + metab(model) / species_params(model)$alpha
+  
+  # Add density dependencies
+  
+  # We now have a model whose steady state matches the landings data, but we still need to calibrate its sensitivity to changes away from the steady state, for example its sensitivity to changes in fishing. We don't have a good way to choose the following three parameters yet,  so we'll just make up values for now.
+  
+  # Set reproduction level
+  model <- setBevertonHolt(model, reproduction_level = 0.6)
+  
+  # Set feeding level
+  model <- setFeedingLevel(model, 0.6)
+  
+  # Set resource level
+  model <- alignResource(model) |>
+    setResourceInteraction(resource_dynamics = "resource_semichemostat")
+  resource_level(model) <- 1/2
+  
+  return(model)
+  
+}
+
+
 ### Plots LFDs
 
 plot_lfd <- function( model, catch, return_df = FALSE) {

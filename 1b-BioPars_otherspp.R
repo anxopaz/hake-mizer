@@ -144,10 +144,47 @@ sar_pil_8c9a <- getSAG(stock="pil.27.8c9a",year = 2025); tibble(sar_pil_8c9a)
 tra_tra_9a <- getSAG(stock="hom.27.9a",year = 2025); tibble(tra_tra_9a)
 mic_pou_91214 <- getSAG(stock="whb.27.1-91214",year = 2025); tibble(mic_pou_91214)
 sco_sco <- getSAG(stock="mac.27.nea",year = 2025); tibble(sco_sco)
+meg_78abd <- getSAG("meg.27.7b-k8abd", year = 2025); tibble(meg_78abd)
+meg_8c9a <- getSAG("meg.27.8c9a", year = 2025); tibble(meg_8c9a)
+ldb_78abd <- getSAG("ldb.27.7b-k8abd", year = 2025); tibble(ldb_78abd)
+ldb_8c9a <- getSAG("ldb.27.8c9a", year = 2025); tibble(ldb_8c9a)
 
 
-other_spp_ices <- list( eng_enc_8 = eng_enc_8, eng_enc_9a = eng_enc_9a, sar_pil_8c9a = sar_pil_8c9a, 
-                        tra_tra_9a = tra_tra_9a, mic_pou_91214 = mic_pou_91214, sco_sco = sco_sco)
+engr_enc1 <- tibble(eng_enc_8)|> select(Year, SSB)
+engr_enc2 <- tibble(eng_enc_9a)|> select(Year, SSB)
+
+engr_enc <- bind_rows( engr_enc1 |> mutate(stock = "a"), engr_enc2 |> mutate(stock = "b")) |>
+  group_by(Year) |> filter(n_distinct(stock) == 2) |>
+  summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
+
+
+lep_whi1 <- tibble(meg_78abd)|> select(Year, SSB)
+lep_whi2 <- tibble(meg_8c9a)|> select(Year, SSB)
+lep_bos1 <- tibble(ldb_78abd)|> select(Year, SSB)
+lep_bos2 <- tibble(ldb_8c9a)|> select(Year, SSB)
+
+lepi_whi <- bind_rows(lep_whi1, lep_whi2) |> group_by(Year) |>
+  summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
+
+lepi_bos <- bind_rows(lep_bos1, lep_bos2) |> group_by(Year) |>
+  summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
+
+
+sard_pil <- tibble(sar_pil_8c9a)|> select(Year, SSB)
+
+trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)
+
+micr_pou <- tibble(mic_pou_91214)|> select(Year, SSB)
+
+scom_sco <- tibble(sco_sco)|> select(Year, SSB)
+
+
+
+other_spp_ices <- list( Eng_encr = engr_enc, Sar_pilc = sard_pil, Tra_trac = trac_tra,
+  Mic_pout = micr_pou, Sco_scom = scom_sco, Lep_bosc = lepi_bos, Lep_whif = lepi_whi)
+
+other_spp_ices2 <- list( eng_enc_8 = eng_enc_8, eng_enc_9a = eng_enc_9a, sar_pil_8c9a = sar_pil_8c9a, 
+                         tra_tra_9a = tra_tra_9a, mic_pou_91214 = mic_pou_91214, sco_sco = sco_sco)
 
 save( other_spp, other_spp_ices, other_spp_plots, file = './input/other_spp_rmd.RData')
 

@@ -347,4 +347,4 @@ names(Catch_spp_tp) <- names(years)
 # Save --------------------
 
 save( LFD_list_spp, LFD_spp, LFD_spp_tp, Catch_list_spp, Catch_spp, Catch_spp_tp,
-      file = './input/Catch_spp.RData')
+      years, file = './input/Catch_spp.RData')
