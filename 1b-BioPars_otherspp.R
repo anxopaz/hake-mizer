@@ -1,5 +1,6 @@
-#### BIOLOGICAL PARAMETERS ####
-####  for southern Hake    ####
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~   Other spps biological parameters   ~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 rm(list=ls())
 
