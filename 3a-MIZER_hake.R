@@ -204,7 +204,7 @@ surv_names <- unique( surveys$gear)
 gp <- data.frame(
   gear = surv_names, 
   species = "Hake",
-  sel_func = rep( 'double_sigmoid_length', length(surv_names)),
+  sel_func = rep( 'sigmoid_length', length(surv_names)),
   l50 = max_length$length*0.8,
   l25 = max_length$length*0.7,
   l50_right = rep( NA, length(surv_names)),
