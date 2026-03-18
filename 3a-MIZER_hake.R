@@ -223,6 +223,7 @@ hake_model_surveys <- matchCatch(hake_model, catch = surveys)
 plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
 
 
+<<<<<<< HEAD
 ## All catch data ------------
 
 surveys <- surveys_data |>
@@ -268,12 +269,50 @@ plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
 
 hake_model_fleets@gear_params
 hake_m@gear_params
+=======
+# Cannibalism ----------------------
+
+model <- hake_model_onefleet
+
+resource_params(model)$w_pp_cutoff <- 1
+model <- alignResource(model)
+
+# Set reproduction level
+model <- setBevertonHolt(model, reproduction_level = 0.6)
+
+# Set feeding level
+model@species_params$p <- model@species_params$n
+model <- setFeedingLevels(model, 0.6, 0.2)
+
+load( 'data/Diet.RData')
+pcann <- mean( cannibal_byyear$Percentage[ which(cannibal_byyear$Year %in% aver_y)]); pcann
+
+diet_matrix <- matrix( c(pcann, 1-pcann), ncol = 2,
+                       dimnames = list( predator = "Hake", prey = c("Hake", "other")))
+
+model <- matchDiet(model, diet_matrix)
+
+# Set resource level
+model <- setResourceInteraction(model, resource_dynamics = "resource_semichemostat")
+resource_level(model) <- 1/2
+
+plotDietX(model)
+plotDeath(model)
+model@interaction
+model@species_params$interaction_resource
+
+cannibal_hake_model <- model
+>>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
 
 
 # Metabolic loss rate and density dependencies -----------
 
+<<<<<<< HEAD
 metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, 
                             feed_level = 0.6, res_level = 1/2){
+=======
+metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, feed_level = 0.6, res_level = 1/2){
+>>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
   
   # Set metabolic loss rate
   
@@ -291,6 +330,8 @@ metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6,
   # Set feeding level
   model <- setFeedingLevel(model, 0.6)
   
+  resource_params(model)$w_pp_cutoff <- 1
+  
   # Set resource level
   model <- alignResource(model) |>
     setResourceInteraction(resource_dynamics = "resource_semichemostat")
@@ -300,6 +341,7 @@ metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6,
   
 }
 
+<<<<<<< HEAD
 ks0 <- bio_pars@species_params$ks
 
 hake_model_onefleet <- metab_and_dens( hake_model_onefleet, ks = ks0)
@@ -313,23 +355,17 @@ hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, ks = ks0)
 hake_model_surveys <- metab_and_dens( hake_model_surveys, ks = ks0)
 
 hake_m <- metab_and_dens( hake_m, ks = ks0)
+=======
+hake_model_onefleet <- metab_and_dens( hake_model_onefleet, bio_pars@species_params$ks)
 
+hake_model_newfun <- metab_and_dens( hake_model_newfun, bio_pars@species_params$ks)
 
+hake_model_fleets <- metab_and_dens( hake_model_fleets, bio_pars@species_params$ks)
+>>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
 
-# Cannibalism ----------------------
+hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, bio_pars@species_params$ks)
 
-hake_model <- hake_model_onefleet
-
-# I'll assume below that 14% of the total diet comes from cannibalism. You will get a warning if you try to increase this and we should discuss this.
-
-load( './data/Diet.RData')
-pcann <- mean( cannibal_byyear$Percentage[ which(cannibal_byyear$Year %in% aver_y)]); pcann
-
-diet_matrix <- matrix( c(pcann, 1-pcann), ncol = 2,
-    dimnames = list( predator = "Hake", prey = c("Hake", "other")))
-
-cannibal_hake_model <- matchDiet(hake_model, diet_matrix)
-plotDietX(cannibal_hake_model)
+hake_model_surveys <- metab_and_dens( hake_model_surveys, bio_pars@species_params$ks)
 
 
 # Steady state ------------------------
