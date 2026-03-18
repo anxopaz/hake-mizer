@@ -34,8 +34,8 @@ load('./input/other_spp_rmd.RData')
 
 ## Parameters --------------
 
-tibble( other_spp$short_fb)
 pars <- other_spp$short_fb
+tibble( pars)
 
 spps <- pars$red
 
@@ -46,6 +46,8 @@ ssb_long <- bind_rows(other_spp_ices, .id = "species") |> filter( Year >= 1992, 
 ssb_spp <- ssb_long |> pivot_wider( names_from = species, values_from = SSB) |> arrange(Year); ssb_spp
 
 load( './input/Hake_SS_Data.RData')
+
+# assessment <- assessment |> filter( Year %in% 2014:2023)
 ratio_sb <- mean( assessment$biomass/assessment$SSB)
 
 ## LFD ------------------

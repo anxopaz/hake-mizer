@@ -41,8 +41,8 @@ ss_biomass <- assessment[,quantity][assessment$Year %in% aver_y]*1e6  # SS bioma
 obs_q <- sum(ss_biomass)/length(aver_y); obs_q/1e6 
 b_min <- lwf(4,a,b); b_min   # SS smallest size is 4 cm
 
-species_params(bio_pars)$biomass_observed <- obs_q
-species_params(bio_pars)$biomass_cutoff <- b_min
+bio_pars@species_params$biomass_observed <- obs_q
+bio_pars@species_params$biomass_cutoff <- b_min
 
 bio_pars <- setBevertonHolt( bio_pars,  # Rdd = Rdi * (Rmax/(Rdi+Rmax))
    reproduction_level = 0.001)          # rep_level = Rdd/Rmax (density dependance degree)
@@ -93,6 +93,7 @@ gp <- data.frame(
   l25 = 28,
   yield_observed = sum(corLFDs$catch)
 )
+
 gear_params(hake_model) <- gp
 initial_effort(hake_model) <- 1
 
@@ -165,16 +166,16 @@ onesurvey <- surveys_data |> group_by(length) |> summarise(catch = sum(number)) 
 
 max_length <- onesurvey %>% filter(catch == max(catch)) %>% ungroup()
 
-gear_names <- unique( onesurvey$gear)
+surv_names <- unique( onesurvey$gear)
 
 gp <- data.frame(
-  gear = gear_names, 
+  gear = surv_names, 
   species = "Hake",
-  sel_func = rep( 'sigmoid_length', length(gear_names)),
+  sel_func = rep( 'sigmoid_length', length(surv_names)),
   l50 = max_length$length*0.8,
   l25 = max_length$length*0.7,
-  l50_right = rep( NA, length(gear_names)),
-  l25_right = rep( NA, length(gear_names)),
+  l50_right = rep( NA, length(surv_names)),
+  l25_right = rep( NA, length(surv_names)),
   yield_observed = sum(surveys_sum$catch),
   catchability = 1)
 
@@ -198,16 +199,16 @@ surveys <- surveys_data |>
 max_length <- surveys %>% group_by(gear) %>%
   filter(catch == max(catch)) %>% ungroup()
 
-gear_names <- unique( surveys$gear)
+surv_names <- unique( surveys$gear)
 
 gp <- data.frame(
-  gear = gear_names, 
+  gear = surv_names, 
   species = "Hake",
-  sel_func = rep( 'sigmoid_length', length(gear_names)),
+  sel_func = rep( 'double_sigmoid_length', length(surv_names)),
   l50 = max_length$length*0.8,
   l25 = max_length$length*0.7,
-  l50_right = rep( NA, length(gear_names)),
-  l25_right = rep( NA, length(gear_names)),
+  l50_right = rep( NA, length(surv_names)),
+  l25_right = rep( NA, length(surv_names)),
   yield_observed = surveys_sum$catch,
   catchability = surveys_sum$catch/sum(surveys_sum$catch))
 
@@ -222,15 +223,62 @@ hake_model_surveys <- matchCatch(hake_model, catch = surveys)
 plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
 
 
+## All catch data ------------
+
+surveys <- surveys_data |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear) |>
+  mutate( gear = paste0('y_', gear))      # to maintain alphabetical order
+
+all_c <- rbind( catch_allfleets, surveys); all_c
+
+gear_names <- c( unique( catch_allfleets$gear), unique( surveys$gear))
+
+gp <- data.frame(
+  gear = gear_names, 
+  species = "Hake",
+  sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+  l50 =       c( 30, 30, 30, 15, 30, 50, 30, 30, 50, max_length$length*0.7),
+  l25 =       c( 25, 25, 25, 10, 25, 45, 25, 25, 45, max_length$length*0.6),
+  l50_right = c( 35, 35, 35, 20, 35, NA, 35, 35, NA, max_length$length*1.1),
+  l25_right = c( 40, 40, 40, 25, 40, NA, 40, 40, NA , max_length$length*1.2),
+  yield_observed = c(corLFDs$catch,surveys_sum$catch),
+  catchability = c(corLFDs$catch,surveys_sum$catch)/sum(corLFDs$catch,surveys_sum$catch))
+
+# gp <- data.frame(
+#   gear = gear_names, 
+#   species = "Hake",
+#   sel_func = ifelse( gear_names == 'palangre', 'sigmoid_length', 'double_sigmoid_length'),
+#   l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1, max_length$length*0.7),
+#   l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5, max_length$length*0.6),
+#   l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, 60, max_length$length*1.3),
+#   l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, 65 , max_length$length*1.4),
+#   yield_observed = c(corLFDs$catch,surveys_sum$catch),
+#   catchability = c(corLFDs$catch,surveys_sum$catch)/sum(corLFDs$catch,surveys_sum$catch))
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+### MatchCatch
+
+hake_m <- matchCatch(hake_model, catch = all_c)
+plotYieldVsSizeByGear(hake_m, catch = all_c)
+plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
+
+hake_model_fleets@gear_params
+hake_m@gear_params
+
 
 # Metabolic loss rate and density dependencies -----------
 
-metab_and_dens <- function( model, rep_level = 0.6, feed_level = 0.6, res_level = 1/2){
+metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, 
+                            feed_level = 0.6, res_level = 1/2){
   
   # Set metabolic loss rate
   
   # So far we ran the model without metabolic loss. If we now introduce this loss, we have to increase the encounter rate to make up for this.
-  species_params(model)$ks <- bio_pars@species_params$ks
+  species_params(model)$ks <- ks
   ext_encounter(model) <- ext_encounter(model) + metab(model) / species_params(model)$alpha
   
   # Add density dependencies
@@ -252,15 +300,19 @@ metab_and_dens <- function( model, rep_level = 0.6, feed_level = 0.6, res_level 
   
 }
 
-hake_model_onefleet <- metab_and_dens( hake_model_onefleet, bio_pars)
+ks0 <- bio_pars@species_params$ks
 
-hake_model_newfun <- metab_and_dens( hake_model_newfun, bio_pars)
+hake_model_onefleet <- metab_and_dens( hake_model_onefleet, ks = ks0)
 
-hake_model_fleets <- metab_and_dens( hake_model_fleets, bio_pars)
+hake_model_newfun <- metab_and_dens( hake_model_newfun, ks = ks0)
 
-hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, bio_pars)
+hake_model_fleets <- metab_and_dens( hake_model_fleets, ks = ks0)
 
-hake_model_surveys <- metab_and_dens( hake_model_surveys, bio_pars)
+hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, ks = ks0)
+
+hake_model_surveys <- metab_and_dens( hake_model_surveys, ks = ks0)
+
+hake_m <- metab_and_dens( hake_m, ks = ks0)
 
 
 
@@ -299,6 +351,10 @@ plotBiomass(sim)
 
 sim <- project(cannibal_hake_model, t_max = 8)
 plotBiomass(sim)
+
+sim <- project(hake_m, t_max = 8)
+plotBiomass(sim)
+
 
 
 # Simulations with increased fishing effort ---------------
@@ -378,9 +434,10 @@ ggplot( mdf, aes( x = Weight, y = Mortality, color = Sex)) + theme_bw() +
 
 hake_mizer <- hake_model
 
-save.image( './output/hake_model.RData')
+save.image( './output/hake_model_full.RData')
 
-
+save( hake_mizer, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
+      hake_model_surveys, file = './output/hake_models.RData')
 
 
 

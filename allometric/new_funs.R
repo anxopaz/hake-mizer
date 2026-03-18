@@ -342,7 +342,7 @@ valid_catch <- function(catch, species) {
 #' all.equal(getEReproAndGrowth(params),
 #'           getEReproAndGrowth(celtic_params))
 #' # The initial size spectrum is set to the steady state size spectrum
-#' params_steady <- mizerEcopath::steadySingleSpecies(params)
+#' params_steady <- steadySingleSpecies(params)
 #' all.equal(initialN(params), initialN(params_steady))
 #' @export
 #' 
@@ -533,7 +533,7 @@ update_params <- function(params, species = 1, pars, data) {
   
   # Calculate the new steady state
   
-  params <- mizerEcopath::steadySingleSpecies(params, species = species)
+  params <- mizer::steadySingleSpecies(params, species = species)
   # Rescale it to get the observed biomass
   params <- matchBiomasses(params, species = species)
   # Set the reproduction level to zero

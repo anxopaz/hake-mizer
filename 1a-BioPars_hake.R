@@ -79,7 +79,7 @@ kmat <- (kmat_m+kmat_f)/2; kmat
 
 U <- kmat*L50/b
 
-w_max <- lwf( bins_no, a, b)
+w_max <- lwf( bins_no, a, b); w_max
 
 
 ## Predation -----------------------------
@@ -98,8 +98,10 @@ h <- 4.75 * Kvb * Linf^0.75; h   # max. consumption rate; h(w) = h_1*w^n;
 # h_1 = 4.75*Kvb*linf^n; n = 0.75 (def)
 
 bio_pars <- newSingleSpeciesParams(
-  species_name="Hake", no_w=bins_no, w_max=w_max, w_mat=w50, lambda=2, h=h, beta=beta, sigma=sigma)
+  species_name="Hake", no_w=bins_no, w_max=w_max, w_mat=w50, lambda=2, h=h, 
+  beta=beta, sigma=sigma)
 
+bio_pars <- validParams(bio_pars)
 
 # lambda: exponent of the spectrum's power law; N(w) = kappa * w^(-lambda); expected to be around 2
 

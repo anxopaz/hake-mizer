@@ -68,9 +68,7 @@ save( spp_pars, FBdata, file = './input/other_spp.RData')
 
 
 spp_pars2 <- data.frame( readxl::read_excel( "./data/Demersales/spp_pars_wiki.xlsx"))
-spp_pars2 <- spp_pars2 %>% mutate(
-  l_max = l_inf
-)
+spp_pars2 <- spp_pars2 %>% mutate( l_max = l_inf)
 
 
 load('./data/Demersales/not_included/other_spp.RData')
