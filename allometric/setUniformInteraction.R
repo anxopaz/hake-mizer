@@ -14,6 +14,8 @@ setUniformInteraction <- function(params) {
     if (!isAllometric(params)) {
         stop("This function requires power law encounter and mortality rates.")
     }
+    old_encounter <- getEncounter(params)
+    old_mort <- getMort(params)
     
     params@interaction[] <- 1
     params@species_params$interaction_resource <- 1
@@ -45,9 +47,13 @@ setUniformInteraction <- function(params) {
     encounter <- encounter / max_ratio
     mort <- mort / max_ratio
     
+    new_encounter <- getEncounter(params)
+    new_mort <- getMort(params)
+    
+    
     # Reduce external rates accordingly
-    params@ext_encounter <- params@ext_encounter - encounter
-    params@mu_b <- params@mu_b - mort
+    params@ext_encounter <- params@ext_encounter - new_encounter + old_encounter
+    params@mu_b <- params@mu_b - new_mort + old_mort
     # Rounding errors could lead to negative values
     params@ext_encounter[params@ext_encounter < 0] <- 0
     params@mu_b[params@mu_b < 0] <- 0
