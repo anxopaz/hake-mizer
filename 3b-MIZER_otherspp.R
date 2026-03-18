@@ -85,8 +85,7 @@ for(i in spps){
     species_name = ipars$common, 
     w_mat = lwf( ipars$l_mat, ipars$a, ipars$b),
     w_max = max( lwf( ipars$l_max, ipars$a, ipars$b), lwf( l_max, ipars$a, ipars$b)), 
-    n = 0.75, 
-    # pred_kernel_type = 'lognormal', 
+    n = 0.75,
     beta = 11.33, 
     sigma = 0.46)
   
@@ -98,21 +97,13 @@ for(i in spps){
   isp@species_params$biomass_cutoff <- lwf(4,ipars$a,ipars$b)
  
   isp <- setBevertonHolt( isp, reproduction_level = 0.001)
-   
-  # ## Species params
-  # # Max size (from landings)
-  # l_max <- 1.001 * max(corLFD$length + 1, na.rm = TRUE)
-  # sp$w_max = lwf(l_max, sp$a, sp$b)
-  
-  isp@species_params$d <- -0.1217
   
   isp <- isp@species_params
   
   imodel <- newAllometricParams(isp)
   
-  
   igp <- data.frame(
-    gear = "Total", 
+    gear = "Demersales", 
     species = ipars$common, 
     catchability = 1,
     sel_func = "sigmoid_length",
@@ -128,10 +119,10 @@ for(i in spps){
   igp$catchability <- igp$yield_observed / yield
   gear_params(imodel) <- igp
   
-  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Total")
+  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales")
   
   imodel <- matchCatch(imodel, catch = icatch)
-  imodel <- metab_and_dens( imodel, imodel)
+  imodel <- metab_and_dens( imodel)
   
   spp_mods[[i]] <- imodel
   catch_mods[[i]] <- icatch

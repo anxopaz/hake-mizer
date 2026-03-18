@@ -269,6 +269,7 @@ plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
 hake_model_fleets@gear_params
 hake_m@gear_params
 
+
 # Cannibalism ----------------------
 
 model <- hake_model_onefleet
@@ -351,7 +352,17 @@ hake_m <- metab_and_dens( hake_m, ks = ks0)
 
 
 
-# Steady state ------------------------
+# Save ----------------------
+
+hake_model <- hake_model_fleets
+
+save.image( './output/hake_model_full.RData')
+
+save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
+      hake_model_surveys, cannibal_hake_model, file = './output/hake_models.RData')
+
+
+# Check steady state ------------------------
 
 sim <- project(hake_model, t_max = 8)
 plotBiomass(sim)
@@ -449,14 +460,7 @@ ggplot( mdf, aes( x = Weight, y = Mortality, color = Sex)) + theme_bw() +
   theme(legend.title=element_blank())
 
 
-# Save ----------------------
 
-hake_mizer <- hake_model
-
-save.image( './output/hake_model_full.RData')
-
-save( hake_mizer, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
-      hake_model_surveys, file = './output/hake_models.RData')
 
 
 
@@ -630,37 +634,6 @@ for( i in 1:length(years)){
   cannibal_mods[[ny]] = cannibal_ihake_model
   
 }
-
-
-# tpdf <- NULL
-# for(i in names(tp_mods)){ tpdf <- rbind( tpdf, spf( tp_mods[[i]], name = i))}
-# 
-# ggplot( tpdf %>% filter(w>10), aes( x = w, y = value, color = Model)) +
-#   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
-#   labs ( x = 'Weigth [g]', y = 'Biomass density', color = 'Period')
-# 
-# ggsave( paste0( tpdir, 'spectra_comparison.jpg'), width = 12, height = 7)
-# ggsave( paste0( tpdir, 'spectra_comparison_ppt.jpg'), width = 6, height = 4)
-# 
-# ggplot( tpdf %>% filter(w>10), aes( x = w, y = value2, color = Model)) +
-#   geom_line( linewidth = .8) + scale_x_log10() + scale_y_log10() + theme_bw() +
-#   labs ( x = 'Weigth [g]', y = 'Biomass density [g]', color = 'Period')
-# 
-# ggsave( paste0( tpdir, 'spectra_comparison2.jpg'), width = 12, height = 7)
-# ggsave( paste0( tpdir, 'spectra_comparison2_ppt.jpg'), width = 6, height = 4)
-# 
-# 
-# tp_table <- matrix( NA, nrow = length(tp_mods), ncol = length(all_pars),
-#                     dimnames = list( names(tp_mods), all_pars))
-# 
-# for(i in names(tp_mods)){ tp_table[i,] <- parsf( tp_mods[[i]])}
-# tp_table
-
-
-
-
-
-
 
 
 # Save all ----------------------
