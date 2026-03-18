@@ -223,7 +223,6 @@ hake_model_surveys <- matchCatch(hake_model, catch = surveys)
 plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
 
 
-<<<<<<< HEAD
 ## All catch data ------------
 
 surveys <- surveys_data |>
@@ -269,7 +268,7 @@ plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
 
 hake_model_fleets@gear_params
 hake_m@gear_params
-=======
+
 # Cannibalism ----------------------
 
 model <- hake_model_onefleet
@@ -302,18 +301,12 @@ model@interaction
 model@species_params$interaction_resource
 
 cannibal_hake_model <- model
->>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
 
 
 # Metabolic loss rate and density dependencies -----------
 
-<<<<<<< HEAD
-metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, 
-                            feed_level = 0.6, res_level = 1/2){
-=======
 metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, feed_level = 0.6, res_level = 1/2){
->>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
-  
+
   # Set metabolic loss rate
   
   # So far we ran the model without metabolic loss. If we now introduce this loss, we have to increase the encounter rate to make up for this.
@@ -341,7 +334,7 @@ metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, feed_level = 0.6,
   
 }
 
-<<<<<<< HEAD
+
 ks0 <- bio_pars@species_params$ks
 
 hake_model_onefleet <- metab_and_dens( hake_model_onefleet, ks = ks0)
@@ -355,17 +348,7 @@ hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, ks = ks0)
 hake_model_surveys <- metab_and_dens( hake_model_surveys, ks = ks0)
 
 hake_m <- metab_and_dens( hake_m, ks = ks0)
-=======
-hake_model_onefleet <- metab_and_dens( hake_model_onefleet, bio_pars@species_params$ks)
 
-hake_model_newfun <- metab_and_dens( hake_model_newfun, bio_pars@species_params$ks)
-
-hake_model_fleets <- metab_and_dens( hake_model_fleets, bio_pars@species_params$ks)
->>>>>>> 5d21ac20b9e953acdbda63cdac3eec0583f4e424
-
-hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, bio_pars@species_params$ks)
-
-hake_model_surveys <- metab_and_dens( hake_model_surveys, bio_pars@species_params$ks)
 
 
 # Steady state ------------------------
