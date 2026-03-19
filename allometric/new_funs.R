@@ -24,9 +24,12 @@ prepare_data <- function(params, species = 1, catch,
     counts <- numeric(0)
     w_min <- 1
     w_max <- sps$w_max
-  }
-  else {
+  } else {
     use_counts <- 1
+    
+    ispec <- species
+    catch <- catch |> filter( species == ispec)
+    
     max_length <- max(catch$length + catch$dl)
     max_weight <- sps$a * max_length^sps$b
     if (max_weight > sps$w_max) {
@@ -37,7 +40,7 @@ prepare_data <- function(params, species = 1, catch,
     
     # Sort bins
     # catch <- catch[order(catch$length), ]   # better as follows for different gears
-    observed_bins <- catch |>
+    observed_bins <- catch |> 
       mutate(bin_start = length, bin_end = length + dl, count = catch) |>
       select(bin_start, bin_end, count, gear) |>
       arrange(gear, bin_start)
@@ -351,6 +354,7 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
 {
   species <- valid_species_arg(params, species = species, error_on_empty = TRUE)
   params <- validParams(params)
+  
   if (length(species) > 1) {
     for (s in species) {
       params <- matchCatch(params, species = s, catch = catch, 
@@ -368,15 +372,15 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
     return(params)
   }
   
-  if(is.vector(data$counts)){ 
-    data$counts <- as.matrix(data$counts, ncol=1)
-    colnames(data$counts) <- params@gear_params$gear}
-  
   sp <- species_params(params)
   gp <- gear_params(params)
   sp_select <- sp$species == species
   sps <- sp[sp_select, ]
   gps <- gp[gp$species == species, ]
+  
+  if(is.vector(data$counts)){ 
+    data$counts <- as.matrix(data$counts, ncol=1)
+    colnames(data$counts) <- gps$gear}
   
   mat_idx <- sum(params@w < sps$w_mat)
   w_mat <- params@w[mat_idx]
@@ -447,6 +451,7 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   
   return(optimal_params)
 }
+
 
 
 #' Prepare a TMB Objective Function for Optimising Model Parameters
@@ -545,41 +550,48 @@ update_params <- function(params, species = 1, pars, data) {
 }
 
 
-plotYieldVsSizeByGear <- function( model, catch, return_df = FALSE){
+plotYieldVsSizeByGear <- function( model, catch, species = 1, return_df = FALSE){
   
   params <- validParams(model)
   
-  s <- params@species_params['species']
-  a <- as.numeric(params@species_params["a"])
-  b <- as.numeric(params@species_params["b"])
+  spname <- valid_species_arg(params, species, error_on_empty = TRUE)
+  
+  idx <- which(params@species_params$species==spname)
+  
+  s <- params@species_params[idx,'species']
+  a <- as.numeric(params@species_params[idx,"a"])
+  b <- as.numeric(params@species_params[idx,"b"])
   w <- params@w
   l <- wlf(w,a,b)
-  gears <- unique(catch$gear)
+  
+  icatch <- catch |> filter( species == spname)
+  
+  gears <- unique(icatch$gear)
   glength <- length(gears)
   
   df <- NULL
   
-  for( i in 1:glength){
+  for( i in gears){
     
-    igear <- gears[i]
+    idx2 <- which(rownames(getFMortGear(params))==i)
     
-    f_mort <- getFMortGear(params)[i,1,]
+    f_mort <- getFMortGear(params)[idx2,idx,]
     
-    catch_w <- f_mort * params@initial_n[1,]
+    catch_w <- f_mort * params@initial_n[idx,]
     catch_w <- catch_w/sum(catch_w * params@dw)
     catch_l <- catch_w * b * w/l
     
     df <- rbind(df, data.frame( Length=l, Catch_l=catch_l, 
-                                Gear=igear, Type="Estimated"))
+                                Gear=i, Type="Estimated"))
     
-    cind <- which(catch$gear==igear)
+    cind <- which(catch$gear==i)
     
     len <- catch$length[cind]
     catch_l <- catch$catch[cind]
     catch_l <- catch_l/sum(catch_l)
     
     df <- rbind(df, data.frame(Length=len, Catch_l=catch_l, 
-                               Gear=igear, Type = "Observed"))
+                               Gear=i, Type = "Observed"))
     
   }
   

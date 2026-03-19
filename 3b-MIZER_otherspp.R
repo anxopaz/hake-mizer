@@ -139,6 +139,7 @@ plots_mods$Sco_scom
 plots_mods$Tra_trac
 
 
-save( spp_mods, catch_mods, file = './output/other_spp.RData')
+
+save( spp_mods, catch_mods, plots_mods, file = './output/other_spp.RData')
 
 

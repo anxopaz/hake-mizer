@@ -24,8 +24,17 @@ source('./allometric/new_funs.R')
 load( './output/hake_models.RData')
 load( './output/other_spp.RData')
 
+initial_n <- hake_model@initial_n
+spp_mods[[1]]@initial_n
+
 
 # Species parameters -----------
+
+for(i in 1:length(spp_mods)) print(getBiomass(spp_mods[[i]])/spp_mods[[i]]@species_params$biomass_observed)
+getBiomass(hake_model)/hake_model@species_params$biomass_observed
+
+for(i in 1:length(spp_mods)) print(getBiomass(spp_mods[[i]]))
+getBiomass(hake_model)
 
 sp_list <- lapply(spp_mods, function(m) m@species_params)
 sp_list[[length(sp_list) + 1]] <- hake_model@species_params
@@ -44,8 +53,7 @@ n_spp <- nrow(spp_pars)
 multi_sp <- newAllometricParams(spp_pars)
 
 
-
-# Gear parameters --------------
+## Gear parameters --------------
 
 gp_list <- lapply(spp_mods, function(m) m@gear_params)
 gp_list[[length(gp_list) + 1]] <- hake_model@gear_params
@@ -57,13 +65,57 @@ multi_gp <- bind_rows(gp_list)
 gear_params(multi_sp) <- multi_gp
 
 initial_effort(multi_sp) <- 1
+
+save(multi_sp, file = 'prefit.RData')
+
 multi_sp <- steadySingleSpecies(multi_sp)
 multi_sp <- setBevertonHolt(multi_sp, reproduction_level = 0.9)
 
 sim <- project(multi_sp, t_max = 10)
 plotBiomass(sim)
 
-# Interaction -------------
+
+
+## Predation ---------------------
+
+celpars <- mizerEcopath::celtic_params@species_params
+
+anc_sar_kerpars <- 
+  readRDS("~/Library/Mobile Documents/com~apple~CloudDocs/Desktop/hake-mizer/data/anchovy_sardine_kernel_params.rds")
+
+trcols <- c("pred_kernel_type", "kernel_exp", "kernel_l_l", "kernel_u_l", "kernel_l_r", "kernel_u_r")
+
+for (col in trcols) {if (!col %in% names(sp)) { sp[[col]] <- NA}}
+
+for (i in seq_len(nrow(sp))) {
+  sp_name <- sp$species[i]
+  if (sp_name %in% celpars$species) {
+    row_cel <- celpars[celpars$species == sp_name, trcols]
+    sp[i, trcols] <- row_cel
+  }
+}
+
+sp[sp$species == "Four-spot megrim", trcols] <- sp[sp$species == "Megrim", trcols]
+
+sp[which(sp$species=='Hake'), 'pred_kernel_type'] <- 'lognormal'     # comment for using celtic values
+
+anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
+sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
+
+species_params(multi_sp) <- sp
+
+backup <- multi_sp
+multi_sp <- backup
+
+plotDiet(multi_sp)
+plotDeath(multi_sp)
+
+
+
+
+
+## Interaction -------------
+
 multi_sp <- alignResource(multi_sp, w_pp_cutoff = 1)
 
 plotSpectra(multi_sp)
@@ -79,7 +131,13 @@ plotDeath(multi_sp)
 sim <- project(multi_sp, t_max = 10)
 plotBiomass(sim)
 
+interaction_matrix(multi_sp)
+sp <- species_params(multi_sp); sp
 
 
+
+
+sim <- project(multi_sp, t_max = 10)
+plotBiomass(sim)
 
 
