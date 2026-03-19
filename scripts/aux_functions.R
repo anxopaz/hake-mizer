@@ -249,29 +249,35 @@ setUniformInteraction <- function(params) {
   temp_params@mu_b[] <- 0
   temp_params@initial_effort[] <- 0
   encounter <- getEncounter(temp_params)
-  mort <- getMort(temp_params)
   
-  # Determine maximum ratio between new rates and external rates for each
-  # species so that we can then divide the search volumes by those ratios.
+  # Determine maximum ratio between new encounter rates and external encounter
+  # rates for each species so that we can then divide the search volumes by
+  # those ratios.
   # We do not have to worry about division by zero because we know that the
   # external rates are given by power laws, hence never zero.
   encounter_ratio <- encounter / params@ext_encounter
-  mort_ratio <- mort / params@mu_b
-  # Calculate the maximum ratios for each species
+  # Calculate the maximum ratio for each species
   max_encounter_ratio <- apply(encounter_ratio, 1, max)
-  max_mort_ratio <- apply(mort_ratio, 1, max)
-  max_ratio <- pmax(max_encounter_ratio, max_mort_ratio)
-  # Rescale gamma and search volume
-  params@species_params$gamma <- 
-    params@species_params$gamma / max_ratio
-  params@search_vol <- params@search_vol / max_ratio
-  # This rescales also the predation encounter and mortality
-  encounter <- encounter / max_ratio
-  mort <- mort / max_ratio
+  # Rescale search volume
+  temp_params@search_vol <- params@search_vol / max_encounter_ratio
   
+  # Determine maximum ration between new mortality rates and external mortality
+  # rates. The new mortality rates are the same for all species and depend on
+  # all gammas, so we do not need a separate ratio for each species.
+  mort <- getMort(temp_params)
+  max_mort_ratio <- max(mort / params@mu_b)
+  # If this is greater than 1 we need to decrease gamma rescaling factor for 
+  # all species
+  scaling <- max_encounter_ratio * max(1, max_mort_ratio)
+  
+  # Now apply the rescaling of search volume to original model
+  # If this is less than 1, we need to adjust the search volume
+  params@search_vol <- params@search_vol / scaling
+  params@species_params$gamma <- params@species_params$gamma / scaling
+  
+  # This rescaling will have increased the rates
   new_encounter <- getEncounter(params)
   new_mort <- getMort(params)
-  
   
   # Reduce external rates accordingly
   params@ext_encounter <- params@ext_encounter - new_encounter + old_encounter
