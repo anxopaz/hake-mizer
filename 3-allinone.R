@@ -98,7 +98,7 @@ sps
 sp <- rbind(sp, sps)
 
 sp$d <- -0.25; sp[1,'d'] <- hake_d
-sp$q <- 0.75
+sp$q <- sp$n <- 0.75
 
 msm <- newAllometricParams(sp, no_w = 400)
 
@@ -131,37 +131,55 @@ sp <- msm@species_params
 
 # Gear params -------------------------
 
-hake_c <- corLFD |>
-  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
-  select( length, catch, dl, species, gear)
-
-gear_names <- unique( hake_c$gear)
+# hake_c <- corLFD |>
+#   mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+#   select( length, catch, dl, species, gear)
+# 
+# gear_names <- unique( hake_c$gear)
+# 
+# gp <- data.frame(
+#   gear = gear_names, 
+#   species = "Hake",
+#   sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+#   l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
+#   l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
+#   l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
+#   l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
+#   yield_observed = corLFDs$catch,
+#   catchability = corLFDs$catch/sum(corLFDs$catch))
 
 gp <- data.frame(
-  gear = gear_names, 
-  species = "Hake",
-  sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
-  l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
-  l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
-  l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
-  l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
-  yield_observed = corLFDs$catch,
-  catchability = corLFDs$catch/sum(corLFDs$catch))
+  gear = "demersales", species = "Hake",
+  sel_func = "sigmoid_length",
+  l50 = 30,
+  l25 = 28,
+  yield_observed = sum(corLFDs$catch), catchability = 1
+)
+
 
 spns <- sp$species[-1]
 
 totalcatch <- purrr::map_df(names(lfd_total), ~ {
   tibble( species = .x, total_catch = lfd_total[[.x]])})
 
+# gp <- rbind(gp, data.frame( gear = "demersales", species = spns, 
+#   sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
+#   l50_right = NA, l25_right = NA,
+#   yield_observed = totalcatch$total_catch*10^6, catchability = 1))
+
 gp <- rbind(gp, data.frame( gear = "demersales", species = spns, 
-  sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
-  l50_right = NA, l25_right = NA,
-  yield_observed = totalcatch$total_catch*10^6, catchability = 1))
+                            sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
+                            yield_observed = totalcatch$total_catch*10^6, catchability = 1))
 
 gear_params(msm) <- gp
 
 names(lfd)  <- pars$common
 for(i in 1:length(lfd)) lfd[[i]]$gear <- 'demersales'
+
+
+
+hake_c <- corLFD |> group_by(length) |> summarise(catch = sum(number)) |>
+  mutate( gear = "demersales")
 
 lfds <- c( list(Hake = hake_c), lfd)
 
@@ -179,7 +197,7 @@ catch
 
 initial_effort(msm) <- 1
 
-source('./allometric/new_funs.R')
+# source('./allometric/new_funs.R')
 
 fmsm <- matchCatch(msm, catch = catch)
 
