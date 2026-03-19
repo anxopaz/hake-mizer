@@ -71,41 +71,14 @@ plotSpectra(multi_sp)
 backup <- multi_sp
 multi_sp <- backup
 
-sim <- project(multi_sp, t_max = 20)
-plotBiomass(sim)
-
-old_mort <- getMort(multi_sp)
-old_encounter <- getEncounter(multi_sp)
-
 multi_sp <- setUniformInteraction( multi_sp)
 
-new_mort <- getMort(multi_sp)
-new_encounter <- getEncounter(multi_sp)
-
-max((old_encounter - new_encounter)/new_encounter)
-max((old_mort - new_mort)/new_mort)
-
-compareParams(multi_sp, backup)
-
-all(multi_sp@ext_encounter >= 0)
-all(multi_sp@mu_b >= 0)
+plotDiet(multi_sp)
+plotDeath(multi_sp)
 
 sim <- project(multi_sp, t_max = 10)
 plotBiomass(sim)
 
-# Check --------------
-
-species_params(multi_sp)
-gear_params(multi_sp)
-interaction_matrix(multi_sp)
-
-plotSpectra( multi_sp)
-
-
-# Project biomass ------------------
-
-sim <- project(multi_sp, t_max = 20)
-plotBiomass(sim)
 
 
 
