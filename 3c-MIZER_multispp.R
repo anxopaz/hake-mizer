@@ -21,7 +21,7 @@ library(TMB)
 source( './scripts/aux_functions.R')
 source('./allometric/new_funs.R')
 
-load( './output/hake_models.RData')
+load( './output/hake_model.RData')
 load( './output/other_spp.RData')
 
 
@@ -47,7 +47,10 @@ n_spp <- nrow(spp_pars)
 
 # Other option -----------
 
+allcatch <- c( list( Hake = hake_catch), catch_mods)
 allmods <- c( Hake = hake_model, spp_mods)
+
+catchdf <- bind_rows( allcatch) 
 
 save( allmods, file='./mods.RData')
 

@@ -279,12 +279,14 @@ cannibal_hake_model <- model
 # Save ----------------------
 
 hake_model <- hake_model_fleets
+hake_catch <- catch_allfleets
 
 save.image( './output/hake_model_full.RData')
 
 save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
-      hake_model_surveys, cannibal_hake_model, file = './output/hake_models.RData')
+      hake_catch, hake_model_surveys, cannibal_hake_model, file = './output/hake_models.RData')
 
+save( hake_model, hake_catch, file = './output/hake_model.RData')
 
 # Metabolic loss rate and density dependencies -----------
 

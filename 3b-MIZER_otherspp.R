@@ -110,7 +110,8 @@ for(i in spps){
   igp$catchability <- igp$yield_observed / yield
   gear_params(imodel) <- igp
   
-  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales")
+  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales") |>
+    select( length, catch, dl, species, gear)
   
   imodel <- matchCatch( imodel, catch = icatch)
   
@@ -125,6 +126,7 @@ for(i in spps){
   plots_mods[[i]] <- plotYieldVsSize(imodel, x_var = "Length", catch = icatch)
   
 }
+
 
 
 save( spp_mods, catch_mods, plots_mods, file = './output/other_spp.RData')
