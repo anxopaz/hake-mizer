@@ -134,6 +134,15 @@ prepare_data <- function(params, species = 1, catch,
   } else {
     yield <- gps$yield_observed
   }
+  
+  # Estimation of m
+  
+  ergr <- getEReproAndGrowth(params)[sp_select, w_select]
+  matur <- params@maturity[sp_select, w_select]
+  n <- params@species_params$n
+  w_max <- params@species_params$w_max
+
+    
   # Prepare data list for TMB
   data <- list(
     use_counts = use_counts,
@@ -152,11 +161,15 @@ prepare_data <- function(params, species = 1, catch,
     production = production,
     biomass = biomass,
     biomass_cutoff_idx = biomass_cutoff_idx,
-    growth = growth,
+    # growth = growth,
     w_mat = w_mat,
     d = sps$d,
     yield_lambda = yield_lambda,
-    production_lambda = production_lambda
+    production_lambda = production_lambda,
+    matur = matur,
+    ergr = ergr,
+    n = n,
+    w_max = w_max
   )
   
   return(data)
@@ -350,7 +363,7 @@ valid_catch <- function(catch, species) {
 #' @export
 #' 
 matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
-                        yield_lambda = 1, production_lambda = 1) 
+                        yield_lambda = 1, production_lambda = 1, mu_mat_lim = 3) 
 {
   species <- valid_species_arg(params, species = species, error_on_empty = TRUE)
   params <- validParams(params)
@@ -401,7 +414,8 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
     log_ratio_right = ifelse( gps$sel_func == 'double_sigmoid_length', 
                               log((gps$l25_right - gps$l50_right)/gps$l50_right), 1),
     mu_mat = mu_mat,
-    log_catchability = log(ifelse(gps$catchability <= 0, 1e-8, gps$catchability)))
+    log_catchability = log(ifelse(gps$catchability <= 0, 1e-8, gps$catchability)),
+    m = ifelse(any(names(sps)=='m'),sps$m,1))
   
   # Set parameter bounds
   # Mortality is bounded by the requirement that the juvenile spectrum of
@@ -410,12 +424,20 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   # spectrum is -mu/g-n. The exponent of the community spectrum is -lambda.
   g_mat <- getEReproAndGrowth(params)[sp_select, mat_idx]
   mu_mat_max <- g_mat / w_mat * (lambda - sps$n)
+  
   lower_bounds <- upper_bounds <- NULL
+  
   lower_bounds <- c(
     rep(-10, length(data$sel_func)*4),    # l50, ratio_left, l50_right_offset, ratio_right
-    0.2, rep(-10, length(data$sel_func))) # mu_mat and log_catchability
+    0.2,                                  # mu_mat
+    rep(-10, length(data$sel_func)),      # log_catchability
+    params@species_params$n*1.01)         # m
   
-  upper_bounds <- c( rep(10, length(data$sel_func)*4), mu_mat_max, rep(10, length(data$sel_func)))
+  upper_bounds <- c( 
+    rep(10, length(data$sel_func)*4), 
+    min(mu_mat_max,mu_mat_lim), 
+    rep(10, length(data$sel_func)),
+    3)
   
   map <- list()
   if (!data$use_counts) {
@@ -437,8 +459,8 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   
   dyn.load( TMB::dynlib("./allometric/new_objective_function"))
   
-  obj <- TMB::MakeADFun(data = data, parameters = initial_params, DLL = "new_objective_function", 
-                        silent = FALSE, debug = TRUE)
+  obj <- TMB::MakeADFun(data = data, parameters = initial_params, 
+      DLL = "new_objective_function", silent = FALSE, debug = TRUE)
   
   # Perform the optimization.
   optim_result <- nlminb(obj$par, obj$fn, obj$gr,
@@ -527,6 +549,7 @@ update_params <- function(params, species = 1, pars, data) {
   
   # recalculate the power-law mortality rate
   sps$mu_mat <- pars["mu_mat"]
+  sps$m <- pars["m"]
   # Note that `mu_mat` is the mortality at the w just below w_mat
   mat_idx <- sum(params@w < sps$w_mat)
   w_mat <- params@w[mat_idx]

@@ -281,6 +281,9 @@ cannibal_hake_model <- model
 hake_model <- hake_model_fleets
 hake_catch <- catch_allfleets
 
+hake_model <- steadySingleSpecies( hake_model) 
+hake_model <- setBevertonHolt( hake_model, reproduction_level = 0.9)
+
 save.image( './output/hake_model_full.RData')
 
 save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
@@ -288,8 +291,8 @@ save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_one
 
 save( hake_model, hake_catch, file = './output/hake_model.RData')
 
-# Metabolic loss rate and density dependencies -----------
 
+# Metabolic loss rate and density dependencies -----------
 
 ks0 <- bio_pars@species_params$ks
 

@@ -40,6 +40,15 @@ vector<Type> calculate_F_mort(Type sel_func, Type logit_l50, Type log_ratio_left
   return F_mort;
 }
 
+template<class Type>
+vector<Type> calculate_growth(vector<Type> w, vector<Type> ergr, 
+                              vector<Type> matur, Type m, Type n, Type w_max)
+{
+  vector<Type> phi = matur * pow( w/w_max, m-n);
+  vector<Type> growth = (1- phi) * ergr;
+  
+  return growth;
+}
 
 template<class Type>
 vector<Type> calculate_N(vector<Type> mort, vector<Type> growth,
@@ -55,7 +64,6 @@ vector<Type> calculate_N(vector<Type> mort, vector<Type> growth,
   
   return N;
 }
-
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -76,11 +84,15 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(production);
   DATA_SCALAR(biomass);
   DATA_INTEGER(biomass_cutoff_idx);
-  DATA_VECTOR(growth);
+  // DATA_VECTOR(growth);
   DATA_SCALAR(w_mat); 
   DATA_SCALAR(d);
   DATA_SCALAR(yield_lambda);
   DATA_SCALAR(production_lambda);
+  DATA_VECTOR(matur);
+  DATA_VECTOR(ergr);
+  DATA_SCALAR(n);
+  DATA_SCALAR(w_max);
   
   PARAMETER_VECTOR(logit_l50);
   PARAMETER_VECTOR(log_ratio_left);
@@ -88,6 +100,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(log_ratio_right);
   PARAMETER(mu_mat);
   PARAMETER_VECTOR(log_catchability); 
+  PARAMETER(m);
   
   int n_bins = w.size();
   int n_g = yield.size();
@@ -102,8 +115,9 @@ Type objective_function<Type>::operator() ()
   F_mort_mat.fill(Type(0.0));
   
   for (int g = 0; g < n_g; ++g) {
-    vector<Type> F_mort_g = calculate_F_mort(sel_func[g], logit_l50[g], log_ratio_left[g], log_l50_right_offset[g], 
-                                             log_ratio_right[g], log_catchability[g], l, min_len, max_len);
+    vector<Type> F_mort_g = calculate_F_mort(sel_func[g], logit_l50[g], 
+          log_ratio_left[g], log_l50_right_offset[g], 
+           log_ratio_right[g], log_catchability[g], l, min_len, max_len);
     for (int i = 0; i < n_bins; ++i) {
       F_mort_mat(i, g) = F_mort_g(i);
       total_F_mort(i) += F_mort_g(i);
@@ -111,6 +125,8 @@ Type objective_function<Type>::operator() ()
   }
   
   vector<Type> mort = mu_mat * pow(w / w_mat, d) + total_F_mort;
+  
+  vector<Type> growth = calculate_growth(w, ergr, matur, m, n, w_max);
   
   vector<Type> N = calculate_N(mort, growth, dw);
   

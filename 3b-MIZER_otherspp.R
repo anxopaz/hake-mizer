@@ -113,13 +113,15 @@ for(i in spps){
   icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales") |>
     select( length, catch, dl, species, gear)
   
-  imodel <- matchCatch( imodel, catch = icatch)
+  imodel <- matchCatch( imodel, catch = icatch, mu_mat_lim = 2.8)
   
   imodel <- steadySingleSpecies( imodel) 
   imodel <- setBevertonHolt( imodel, reproduction_level = 0.9)
   
   print(plotYieldVsSize(imodel, x_var = "Length", catch = icatch))
   print(plotBiomass(project(imodel,t_max=10)))
+  
+  imodel@species_params
   
   spp_mods[[i]] <- imodel
   catch_mods[[i]] <- icatch

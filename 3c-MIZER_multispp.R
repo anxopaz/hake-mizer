@@ -52,6 +52,9 @@ allmods <- c( Hake = hake_model, spp_mods)
 
 catchdf <- bind_rows( allcatch) 
 
+params <- 
+
+
 save( allmods, file='./mods.RData')
 
 # msmod <- bindParams( allmods)
