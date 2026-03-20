@@ -45,6 +45,15 @@ spp_pars
 n_spp <- nrow(spp_pars)
 
 
+# Other option -----------
+
+allmods <- c( Hake = hake_model, spp_mods)
+
+save( allmods, file='./mods.RData')
+
+# msmod <- bindParams( allmods)
+
+
 # Multi-species model -----------------
 
 multi_sp <- newAllometricParams(spp_pars)
@@ -63,19 +72,45 @@ gear_params(multi_sp) <- multi_gp
 
 initial_effort(multi_sp) <- 1
 
-save(multi_sp, file = 'prefit.RData')
-
 multi_sp <- steadySingleSpecies(multi_sp)
 multi_sp <- setBevertonHolt(multi_sp, reproduction_level = 0.9)
 
 sim <- project(multi_sp, t_max = 10)
 plotBiomass(sim)
 
-# multi_sp@initial_n[] <- n_mat
-# multi_sp@mu_b[] <- mu_b_mat
-# 
-# sim <- project(multi_sp, t_max = 10)
-# plotBiomass(sim)
+
+getBiomass(multi_sp)
+
+for(i in names(allmods)){
+  print(paste(i,round(allmods[[i]]@species_params$biomass_observed/10^6)))
+}
+
+for(i in names(allmods)){
+  print(plotBiomass(project(allmods[[i]], t_max = 10)))
+}
+
+## Initial N and mu_b ---------
+
+nsp <- nrow(multi_sp@species_params)
+nw  <- ncol(multi_sp@initial_n)
+
+mu_mat <- n_mat <- matrix(NA, nrow = nsp, ncol = nw,
+  dimnames = list(multi_sp@species_params$species, NULL))
+
+for (sp in 1:length(spp_mods)){
+  n_mat[sp, ] <- as.numeric(spp_mods[[sp]]@initial_n)
+  mu_mat[sp, ]  <- as.numeric(spp_mods[[sp]]@mu_b)
+}
+
+n_mat['Hake', ] <- as.numeric(hake_model@initial_n)
+mu_mat['Hake', ]  <- as.numeric(hake_model@mu_b)
+
+
+multi_sp@initial_n[] <- n_mat
+multi_sp@mu_b[] <- mu_mat
+
+sim <- project(multi_sp, t_max = 10)
+plotBiomass(sim)
 
 
 
@@ -108,7 +143,6 @@ anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
 sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
 
 # species_params(multi_sp) <- sp
-
 
 
 

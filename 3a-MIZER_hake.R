@@ -20,33 +20,11 @@ library(TMB)
 source( './scripts/aux_functions.R')
 
 
-# Biological parameters ----------------------------
+# Load data ----------------------------
 
 load( './input/Bio_Pars.RData')     # './1-Bio_Pars.R' with Biological Parameters
-
-
-# Fishing Mortality --------------------------
-
 load( './input/Catch.RData')   # './2-Catch.R' with Catch and LFD data
-
-
-# SSB / Bio ----------------
-
 load( './input/Hake_SS_Data.RData')   # './scripts/WGBIE24.R' WGBIE assessment results
-
-quantity <- 'biomass' # 'SSB'
-
-ss_biomass <- assessment[,quantity][assessment$Year %in% aver_y]*1e6  # SS biomass (tonnes to grams)
-
-obs_q <- sum(ss_biomass)/length(aver_y); obs_q/1e6 
-b_min <- lwf(4,a,b); b_min   # SS smallest size is 4 cm
-
-bio_pars@species_params$biomass_observed <- obs_q
-bio_pars@species_params$biomass_cutoff <- b_min
-
-bio_pars <- setBevertonHolt( bio_pars,  # Rdd = Rdi * (Rmax/(Rdi+Rmax))
-   reproduction_level = 0.001)          # rep_level = Rdd/Rmax (density dependance degree)
-
 
 
 # MIZER model --------------------------------
@@ -119,9 +97,6 @@ source('./allometric/new_funs.R')
 
 hake_model_newfun <- matchCatch(hake_model, catch = catch_onefleet)
 plotYieldVsSize(hake_model_newfun, x_var = "Length", catch = catch_onefleet)
-
-plotSpectra2( hake_model_onefleet, hake_model_newfun)
-hake_model_onefleet@gear_params; hake_model_newfun@gear_params
 
 
 ## Fishing (different gears) -------------------------
@@ -266,9 +241,6 @@ hake_m <- matchCatch(hake_model, catch = all_c)
 plotYieldVsSizeByGear(hake_m, catch = all_c)
 plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
 
-hake_model_fleets@gear_params
-hake_m@gear_params
-
 
 # Cannibalism ----------------------
 
@@ -304,36 +276,17 @@ model@species_params$interaction_resource
 cannibal_hake_model <- model
 
 
+# Save ----------------------
+
+hake_model <- hake_model_fleets
+
+save.image( './output/hake_model_full.RData')
+
+save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
+      hake_model_surveys, cannibal_hake_model, file = './output/hake_models.RData')
+
+
 # Metabolic loss rate and density dependencies -----------
-
-metab_and_dens <- function( model, ks = 1.97, rep_level = 0.6, feed_level = 0.6, res_level = 1/2){
-
-  # Set metabolic loss rate
-  
-  # So far we ran the model without metabolic loss. If we now introduce this loss, we have to increase the encounter rate to make up for this.
-  species_params(model)$ks <- ks
-  ext_encounter(model) <- ext_encounter(model) + metab(model) / species_params(model)$alpha
-  
-  # Add density dependencies
-  
-  # We now have a model whose steady state matches the landings data, but we still need to calibrate its sensitivity to changes away from the steady state, for example its sensitivity to changes in fishing. We don't have a good way to choose the following three parameters yet,  so we'll just make up values for now.
-  
-  # Set reproduction level
-  model <- setBevertonHolt(model, reproduction_level = 0.6)
-  
-  # Set feeding level
-  model <- setFeedingLevel(model, 0.6)
-  
-  resource_params(model)$w_pp_cutoff <- 1
-  
-  # Set resource level
-  model <- alignResource(model) |>
-    setResourceInteraction(resource_dynamics = "resource_semichemostat")
-  resource_level(model) <- 1/2
-  
-  return(model)
-  
-}
 
 
 ks0 <- bio_pars@species_params$ks
@@ -349,17 +302,6 @@ hake_model_onesurvey <- metab_and_dens( hake_model_onesurvey, ks = ks0)
 hake_model_surveys <- metab_and_dens( hake_model_surveys, ks = ks0)
 
 hake_m <- metab_and_dens( hake_m, ks = ks0)
-
-
-
-# Save ----------------------
-
-hake_model <- hake_model_fleets
-
-save.image( './output/hake_model_full.RData')
-
-save( hake_model, hake_model_fleets, hake_m, hake_model_onefleet, hake_model_onesurvey, 
-      hake_model_surveys, cannibal_hake_model, file = './output/hake_models.RData')
 
 
 # Check steady state ------------------------
