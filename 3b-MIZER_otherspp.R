@@ -16,20 +16,18 @@ library(sm)
 library(mizer)
 library(mizerExperimental)
 library(TMB)
-
 library(mizerEcopath)
 
 source( './scripts/aux_functions.R')
-
 source('./allometric/new_funs.R')
 
-# load( './output/alldata.RData')
 
 
 # Multi-species model ------------------------
 
 load('./input/Catch_spp.RData')
 load('./input/other_spp_rmd.RData')
+load( './output/hake_models.RData')
 
 
 ## Parameters --------------
@@ -139,7 +137,115 @@ plots_mods$Sco_scom
 plots_mods$Tra_trac
 
 
+# Single fit with w(hake) ---------------
 
-save( spp_mods, catch_mods, plots_mods, file = './output/other_spp.RData')
+spp_mods2 <- catch_mods2 <- plots_mods2 <- list()
+
+for(i in spps){
+  
+  ipars <- pars |> filter( red == i)
+  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
+  
+  l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
+  
+  isp <- newSingleSpeciesParams( 
+    species_name = ipars$common, 
+    w_mat = lwf( ipars$l_mat, ipars$a, ipars$b),
+    w_max = max( lwf( ipars$l_max, ipars$a, ipars$b), lwf( l_max, ipars$a, ipars$b)), 
+    n = 0.75,
+    beta = 11.33, 
+    sigma = 0.46)
+  
+  isp@species_params$age_mat = laf( ipars$l_mat, ipars$l_inf, ipars$kvb, ipars$al0)
+  isp@species_params$a = ipars$a
+  isp@species_params$b = ipars$b 
+  
+  isp@species_params$biomass_observed <- issb$Bio
+  isp@species_params$biomass_cutoff <- lwf(4,ipars$a,ipars$b)
+  
+  isp <- setBevertonHolt( isp, reproduction_level = 0.001)
+  
+  isp <- isp@species_params
+  
+  imodel <- newAllometricPars(isp, max_w = hake_model@species_params$w_max)
+  
+  igp <- data.frame(
+    gear = "Demersales", 
+    species = ipars$common, 
+    catchability = 1,
+    sel_func = "sigmoid_length",
+    l50 = ipars$l_mat,
+    l25 = ipars$l_mat*0.8,
+    yield_observed = sum(ilfd$catch)
+  )
+  
+  gear_params(imodel) <- igp
+  initial_effort(imodel) <- 1
+  
+  yield <- getYield(imodel)
+  igp$catchability <- igp$yield_observed / yield
+  gear_params(imodel) <- igp
+  
+  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales")
+  
+  imodel <- matchCatch(imodel, catch = icatch)
+  imodel <- metab_and_dens( imodel)
+  
+  spp_mods2[[i]] <- imodel
+  catch_mods2[[i]] <- icatch
+  plots_mods2[[i]] <- plotYieldVsSize(imodel, x_var = "Length", catch = icatch)
+  
+}
+
+plots_mods2$Eng_encr
+plots_mods2$Lep_bosc
+plots_mods2$Lep_whif
+plots_mods2$Mic_pout
+plots_mods2$Sar_pilc
+plots_mods2$Sco_scom
+plots_mods2$Tra_trac
+
+
+
+
+
+## Extrapolate numbers and mortality ---------
+
+hakew <- hake_model@w
+
+n_mat <- mu_b_mat <- matrix( NA, nrow = length(spp_mods), ncol = length(hakew),
+  dimnames = list( pars$common, hakew))
+
+
+for (sp in 1:length(spp_mods)) {
+  
+  mod <- spp_mods[[sp]]
+  
+  initw <- mod@w
+  initn <- as.numeric(mod@initial_n)
+  
+  fn <- splinefun(initw, initn, method = "monoH.FC")
+  
+  new_n <- fn(hakew)
+  
+  initm <- as.numeric(mod@mu_b)
+  
+  fm <- splinefun(initw, initm, method = "monoH.FC")
+  
+  new_m <- fm(hakew)
+  
+  n_mat[sp, ] <- new_n
+  mu_b_mat[sp,] <- new_m
+
+}
+
+n_mat[which(n_mat<0)] <- 0
+n_mat <- rbind(n_mat, Hake = hake_model@initial_n)
+
+mu_b_mat[which(mu_b_mat<0)] <- 0
+mu_b_mat <- rbind(mu_b_mat, Hake = hake_model@mu_b)
+
+save( spp_mods, catch_mods, plots_mods, n_mat, mu_b_mat, file = './output/other_spp.RData')
 
 

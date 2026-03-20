@@ -76,33 +76,38 @@ pars <- other_spp$short_fb
 tibble( pars)
 
 
-sps <- data.frame(
-  species = pars$common, 
-  w_mat = lwf(pars$l_mat, pars$a, pars$b),
-  age_mat = laf( pars$l_mat, pars$l_inf, pars$kvb, pars$al0),
-  w_max = lwf( pars$l_max, pars$a, pars$b), 
-  a = pars$a, b = pars$b, 
-  pred_kernel_type = 'lognormal', beta = sp$beta, sigma = sp$sigma
-)
+# Generate correctly-scaled parameters for each of the other species
+# using newSingleSpeciesParams like in 3b-MIZER_otherspp.R to ensure
+# gamma, h, and other scaling parameters match
+sp_list <- list()
+for(i in 1:nrow(pars)) {
+  ipars <- pars[i,]
+  ilfd <- lfd[[ipars$red]]
+  l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
+  
+  isp <- newSingleSpeciesParams(
+    species_name = ipars$common, 
+    w_mat = lwf(ipars$l_mat, ipars$a, ipars$b),
+    w_max = max(lwf(ipars$l_max, ipars$a, ipars$b), lwf(l_max, ipars$a, ipars$b)), 
+    n = 0.75, beta = sp$beta[1], sigma = sp$sigma[1])
+  
+  isp@species_params$age_mat <- laf(ipars$l_mat, ipars$l_inf, ipars$kvb, ipars$al0)
+  isp@species_params$a <- ipars$a
+  isp@species_params$b <- ipars$b
+  isp@species_params$biomass_observed <- bio$Bio[bio$red == ipars$red] * 1e6
+  isp@species_params$biomass_cutoff <- lwf(4, ipars$a, ipars$b)
+  
+  sp_list[[i]] <- isp@species_params
+}
 
-for(i in 1:nrow(sps)) {
-  sps[i,'w_max'] <- max(sps[i,'w_max'], 
-    lwf( 1.001 * as.numeric(df_max[which(df_max$red==pars[i,'red']),'max_length']) + 5, 
-         sps[i,'a'], sps[i,'b']))}
-
-sps$biomass_observed <- bio$Bio[ match(pars$red, bio$red) ] * 1e6
-sps$biomass_cutoff <- lwf( 4, pars$a, pars$b)
-
-sps
-
-sp <- rbind(sp, sps)
+sps <- bind_rows(sp_list)
+sp <- bind_rows(sp, sps)
 
 sp$d <- -0.25; sp[1,'d'] <- hake_d
 sp$q <- sp$n <- 0.75
 
 msm <- newAllometricParams(sp, no_w = 400)
-
-# msm <- setBevertonHolt( msm, reproduction_level = 0.001)
+msm <- setBevertonHolt( msm, reproduction_level = 0.001)
 
 sp <- msm@species_params
 
@@ -131,30 +136,30 @@ sp <- msm@species_params
 
 # Gear params -------------------------
 
-# hake_c <- corLFD |>
-#   mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
-#   select( length, catch, dl, species, gear)
-# 
-# gear_names <- unique( hake_c$gear)
-# 
-# gp <- data.frame(
-#   gear = gear_names, 
-#   species = "Hake",
-#   sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
-#   l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
-#   l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
-#   l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
-#   l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
-#   yield_observed = corLFDs$catch,
-#   catchability = corLFDs$catch/sum(corLFDs$catch))
+hake_c <- corLFD |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear)
+
+gear_names <- unique( hake_c$gear)
 
 gp <- data.frame(
-  gear = "demersales", species = "Hake",
-  sel_func = "sigmoid_length",
-  l50 = 30,
-  l25 = 28,
-  yield_observed = sum(corLFDs$catch), catchability = 1
-)
+  gear = gear_names,
+  species = "Hake",
+  sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+  l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
+  l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
+  l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
+  l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
+  yield_observed = corLFDs$catch,
+  catchability = corLFDs$catch/sum(corLFDs$catch))
+
+# gp <- data.frame(
+#   gear = "demersales", species = "Hake",
+#   sel_func = "sigmoid_length",
+#   l50 = 30,
+#   l25 = 28,
+#   yield_observed = sum(corLFDs$catch), catchability = 1
+# )
 
 
 spns <- sp$species[-1]
@@ -162,14 +167,14 @@ spns <- sp$species[-1]
 totalcatch <- purrr::map_df(names(lfd_total), ~ {
   tibble( species = .x, total_catch = lfd_total[[.x]])})
 
-# gp <- rbind(gp, data.frame( gear = "demersales", species = spns, 
-#   sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
-#   l50_right = NA, l25_right = NA,
-#   yield_observed = totalcatch$total_catch*10^6, catchability = 1))
+gp <- rbind(gp, data.frame( gear = "demersales", species = spns,
+  sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8,
+  l50_right = NA, l25_right = NA,
+  yield_observed = totalcatch$total_catch*10^6, catchability = 1))
 
-gp <- rbind(gp, data.frame( gear = "demersales", species = spns, 
-                            sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
-                            yield_observed = totalcatch$total_catch*10^6, catchability = 1))
+# gp <- rbind(gp, data.frame( gear = "demersales", species = spns, 
+#                             sel_func = "sigmoid_length", l50 = pars$l_mat, l25 = pars$l_mat*0.8, 
+#                             yield_observed = totalcatch$total_catch*10^6, catchability = 1))
 
 gear_params(msm) <- gp
 
@@ -178,8 +183,8 @@ for(i in 1:length(lfd)) lfd[[i]]$gear <- 'demersales'
 
 
 
-hake_c <- corLFD |> group_by(length) |> summarise(catch = sum(number)) |>
-  mutate( gear = "demersales")
+# hake_c <- corLFD |> group_by(length) |> summarise(catch = sum(number)) |>
+#   mutate( gear = "demersales")
 
 lfds <- c( list(Hake = hake_c), lfd)
 
@@ -197,9 +202,55 @@ catch
 
 initial_effort(msm) <- 1
 
-# source('./allometric/new_funs.R')
 
-fmsm <- matchCatch(msm, catch = catch)
+# Manual fit for each species
+
+source('./allometric/new_funs.R')
+
+fmsm <- msm
+fitted_mods <- list()
+
+for( i in 1:nrow(msm@species_params)){
+  
+  ispec <- msm@species_params$species[i]
+  isp <- msm@species_params[i,]
+  igp <- msm@gear_params[which(msm@gear_params$species==ispec),]
+  icat <- catch |> filter(species==ispec)
+  
+  imod <- newAllometricParams(isp, no_w = 400)
+  gear_params(imod) <- igp
+  initial_effort(imod) <- 1
+  
+  # Fit Catch for the individual species
+  imod <- matchCatch(imod, catch = icat)
+  
+  # Accumulate the optimized Single-Species parameters
+  fmsm@species_params[which(fmsm@species_params$species==ispec),] <- imod@species_params
+  fmsm@gear_params[which(fmsm@gear_params$species==ispec),] <- imod@gear_params
+  
+  fitted_mods[[ispec]] <- imod
+}
+
+# Update the multispecies object with all the individually fitted params
+fmsm <- newAllometricParams(fmsm@species_params, no_w = 400)
+gear_params(fmsm) <- bind_rows(lapply(fitted_mods, function(m) m@gear_params))
+initial_effort(fmsm) <- 1
+
+for(i in 1:nrow(fmsm@species_params)) {
+  ispec <- fmsm@species_params$species[i]
+  w_multi <- fmsm@w
+  w_single <- fitted_mods[[ispec]]@w
+  single_n <- fitted_mods[[ispec]]@initial_n[1, ]
+  
+  interp_n <- exp(approx(x = log(w_single), y = log(single_n + 1e-300), xout = log(w_multi), rule = 2)$y)
+  w_max <- fmsm@species_params$w_max[i]
+  interp_n[w_multi > w_max] <- 0
+  
+  idx1 <- which(rownames(fmsm@initial_n) == ispec)
+  fmsm@initial_n[idx1, ] <- interp_n
+}
+
+fmsm <- matchBiomasses(fmsm)
 
 plotYieldVsSizeByGear(fmsm, catch)
 
@@ -233,12 +284,4 @@ sim <- project( fmsm, t_max=10)
 plotBiomass( sim)
 
 
-params <- msm
-species = 'Anchovy'
-lambda = 2.05
-yield_lambda = 1
-production_lambda = 1
 
-
-hake_model_fleets <- matchCatch(hake_model, catch = hake_c)
-plotYieldVsSizeByGear(hake_model_fleets, catch = hake_c)

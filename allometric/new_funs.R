@@ -569,13 +569,15 @@ plotYieldVsSizeByGear <- function( model, catch, species = 1, return_df = FALSE)
   gears <- unique(icatch$gear)
   glength <- length(gears)
   
+  fmortal <- getFMortGear(params)
+  
   df <- NULL
   
   for( i in gears){
     
-    idx2 <- which(rownames(getFMortGear(params))==i)
+    idx2 <- which(rownames(fmortal)==i)
     
-    f_mort <- getFMortGear(params)[idx2,idx,]
+    f_mort <- fmortal[idx2,idx,]
     
     catch_w <- f_mort * params@initial_n[idx,]
     catch_w <- catch_w/sum(catch_w * params@dw)

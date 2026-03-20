@@ -24,9 +24,6 @@ source('./allometric/new_funs.R')
 load( './output/hake_models.RData')
 load( './output/other_spp.RData')
 
-initial_n <- hake_model@initial_n
-spp_mods[[1]]@initial_n
-
 
 # Species parameters -----------
 
@@ -74,9 +71,17 @@ multi_sp <- setBevertonHolt(multi_sp, reproduction_level = 0.9)
 sim <- project(multi_sp, t_max = 10)
 plotBiomass(sim)
 
+# multi_sp@initial_n[] <- n_mat
+# multi_sp@mu_b[] <- mu_b_mat
+# 
+# sim <- project(multi_sp, t_max = 10)
+# plotBiomass(sim)
+
 
 
 ## Predation ---------------------
+
+sp <- multi_sp@species_params
 
 celpars <- mizerEcopath::celtic_params@species_params
 
@@ -102,13 +107,7 @@ sp[which(sp$species=='Hake'), 'pred_kernel_type'] <- 'lognormal'     # comment f
 anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
 sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
 
-species_params(multi_sp) <- sp
-
-backup <- multi_sp
-multi_sp <- backup
-
-plotDiet(multi_sp)
-plotDeath(multi_sp)
+# species_params(multi_sp) <- sp
 
 
 

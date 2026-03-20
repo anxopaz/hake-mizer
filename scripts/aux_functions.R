@@ -463,3 +463,54 @@ parsf <- function( model, nofixed = c('gamma','q','n','ks','p','k','alpha'), res
   names(parsv) <- all_pars
   return(parsv)
 }
+
+
+newAllometricPars <- function (species_params, no_w = 200, max_w = species_params$w_max) {
+  sp <- validGivenSpeciesParams(species_params)
+  sp <- set_species_param_default(sp, "n", 0.7)
+  sp <- set_species_param_default(sp, "p", 0.7)
+  sp <- set_species_param_default(sp, "d", sp$n - 1)
+  sp <- set_species_param_default(sp, "alpha", 0.8)
+  sp$ks <- 0
+  sp$z0 <- 0
+  max_w <- max(max_w,sp$w_max)
+  p <- newMultispeciesParams(sp, no_w = no_w, info_level = 0, 
+      max_w = max_w, w_pp_cutoff = max_w * (1 + 1e-09), 
+      resource_dynamics = "resource_constant")
+  sp <- p@species_params
+  interaction_matrix(p)[] <- 0
+  sp$interaction_resource <- 0
+  sp$h <- Inf
+  intake_max(p)[] <- Inf
+  species_params(p) <- sp
+  ext_encounter(p) <- t(outer(p@w, sp$n, "^"))
+  sp <- set_species_param_default(sp, "age_mat", age_mat_vB(sp))
+  factor <- age_mat(p)/sp$age_mat
+  ext_encounter(p) <- sweep(ext_encounter(p), 1, factor, "*")
+  e0 <- getEGrowth(p)[, 1]/w(p)[1]^sp$n[1]
+  mu0 <- e0 * (1 + 0.2 - sp$n)
+  ext_mort(p) <- sweep(t(outer(p@w, sp$d, "^")), 1, mu0, "*")
+  p <- matchBiomasses(p)
+  p <- steadySingleSpecies(p, keep = "biomass")
+  p <- setBevertonHolt(p, reproduction_level = 0)
+  return(p)
+}
+
+age_mat_vB <- function(object) {
+  if (is(object, "MizerParams")) {
+    sp <- object@species_params
+  } else {
+    if (!is.data.frame(object)) {
+      stop("The first argument must be either a MizerParams object or a species_params data frame.")
+    }
+    sp <- validSpeciesParams(object)
+  }
+  sp <- set_species_param_default(sp, "t0", 0)
+  sp <- set_species_param_default(sp, "b", 3)
+  sp <- set_species_param_default(sp, "k_vb", NA)
+  sp <- set_species_param_default(sp, "w_inf", sp$w_max)
+  
+  a_mat <- -log(1 - (sp$w_mat / sp$w_inf) ^ (1/sp$b)) / sp$k_vb + sp$t0
+  names(a_mat) <- sp$species
+  a_mat
+}
