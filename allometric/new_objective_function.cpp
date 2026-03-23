@@ -98,8 +98,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(log_ratio_left);
   PARAMETER_VECTOR(log_l50_right_offset);
   PARAMETER_VECTOR(log_ratio_right);
+  PARAMETER_VECTOR(log_catchability);
   PARAMETER(mu_mat);
-  PARAMETER_VECTOR(log_catchability); 
   PARAMETER(m);
   
   int n_bins = w.size();

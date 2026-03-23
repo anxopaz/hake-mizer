@@ -41,11 +41,6 @@ load( './input/bio_pars.RData')
 
 ## Catch data ----------------------
 
-# catch1 <- read.csv("./data/catch/catch 1948-1981.csv", header=T)
-# catch2 <- read.csv("./data/catch/catch 1982-1993.csv", header=T)
-# catch3 <- read.csv("./data/catch/catch 1994-2023.csv", header=T)
-# Index <- read.csv("./data/catch/indices 1982-2023.csv", header=T)
-
 catch <- read.csv("./data/catch/catch 1994-2023.csv", header=T)
 LFD3 <- read.csv("./data/catch/LFDs 1994-2023.csv", header=T)
 

@@ -363,15 +363,16 @@ valid_catch <- function(catch, species) {
 #' @export
 #' 
 matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
-                        yield_lambda = 1, production_lambda = 1, mu_mat_lim = 3) 
+                        yield_lambda = 1, production_lambda = 1, mu_mat_lim = 5, map = NULL) 
 {
   species <- valid_species_arg(params, species = species, error_on_empty = TRUE)
   params <- validParams(params)
   
   if (length(species) > 1) {
     for (s in species) {
-      params <- matchCatch(params, species = s, catch = catch, 
-                           yield_lambda = yield_lambda, production_lambda = production_lambda)
+      params <- matchCatch(params, species = s, catch = catch, lambda = lambda,
+                           yield_lambda = yield_lambda, production_lambda = production_lambda, 
+                           mu_mat_lim = mu_mat_lim, map = map)
     }
     return(params)
   }
@@ -407,15 +408,22 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   # Initial parameter estimates
   # differenet parametrization for selectivity (note that C++ fails with NAs)
   initial_params <- list(
+    
     logit_l50 = qlogis((gps$l50 - min(data$l))/(max(data$l) - min(data$l))),
+    
     log_ratio_left = qlogis((gps$l50 - gps$l25)/gps$l50),
+    
     log_l50_right_offset = ifelse( gps$sel_func == 'double_sigmoid_length', 
-                                   log(pmax(1e-3, gps$l50_right - gps$l50)), 1),
+      log(pmax(1e-3, gps$l50_right - gps$l50)), 1),
+    
     log_ratio_right = ifelse( gps$sel_func == 'double_sigmoid_length', 
-                              log((gps$l25_right - gps$l50_right)/gps$l50_right), 1),
-    mu_mat = mu_mat,
+      log((gps$l25_right - gps$l50_right)/gps$l50_right), 1),
+    
     log_catchability = log(ifelse(gps$catchability <= 0, 1e-8, gps$catchability)),
-    m = ifelse(any(names(sps)=='m'),sps$m,1))
+    
+    mu_mat = mu_mat,
+    
+    m = ifelse(any(names(sps)=='m'), sps$m, 1))
   
   # Set parameter bounds
   # Mortality is bounded by the requirement that the juvenile spectrum of
@@ -425,42 +433,85 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   g_mat <- getEReproAndGrowth(params)[sp_select, mat_idx]
   mu_mat_max <- g_mat / w_mat * (lambda - sps$n)
   
-  lower_bounds <- upper_bounds <- NULL
+  lower_bounds_list <- list(
+    logit_l50 = rep(-10, length(data$sel_func)),
+    log_ratio_left = rep(-10, length(data$sel_func)),
+    log_l50_right_offset = rep(-10, length(data$sel_func)),
+    log_ratio_right = rep(-10, length(data$sel_func)),
+    log_catchability = rep(-10, length(data$sel_func)),
+    mu_mat = 0.2,
+    m = params@species_params$n*1.01
+  )
   
-  lower_bounds <- c(
-    rep(-10, length(data$sel_func)*4),    # l50, ratio_left, l50_right_offset, ratio_right
-    0.2,                                  # mu_mat
-    rep(-10, length(data$sel_func)),      # log_catchability
-    params@species_params$n*1.01)         # m
+  upper_bounds_list <- list(
+    logit_l50 = rep(10, length(data$sel_func)),
+    log_ratio_left = rep(10, length(data$sel_func)),
+    log_l50_right_offset = rep(10, length(data$sel_func)),
+    log_ratio_right = rep(10, length(data$sel_func)),
+    log_catchability = rep(10, length(data$sel_func)),
+    mu_mat = min(mu_mat_max,mu_mat_lim),
+    m = 3
+  )
   
-  upper_bounds <- c( 
-    rep(10, length(data$sel_func)*4), 
-    min(mu_mat_max,mu_mat_lim), 
-    rep(10, length(data$sel_func)),
-    3)
+  if (!is.null(map)) {
+    # Traducir los nombres amigables a los nombres internos del optimizador
+    name_translation <- c(
+      "l50" = "logit_l50",
+      "l25" = "log_ratio_left",
+      "l50_right" = "log_l50_right_offset",
+      "l25_right" = "log_ratio_right",
+      "catchability" = "log_catchability",
+      "mu_mat" = "mu_mat",
+      "m" = "m"
+    )
+    
+    transformed_map <- list()
+    for (orig_name in names(map)) {
+      if (orig_name %in% names(name_translation)) {
+        transformed_map[[name_translation[[orig_name]]]] <- map[[orig_name]]
+      } else {
+        transformed_map[[orig_name]] <- map[[orig_name]]
+      }
+    }
+    map <- transformed_map
+  } else {
+    map <- list()
+  }
   
-  map <- list()
   if (!data$use_counts) {
-      map$l50 <- factor(NA)
-      map$ratio <- factor(NA)
-      lower_bounds <- lower_bounds[-(1:2)]
-      upper_bounds <- upper_bounds[-(1:2)]
+      map$logit_l50 <- factor(rep(NA, length(data$sel_func)))
+      map$log_ratio_left <- factor(rep(NA, length(data$sel_func)))
+      map$log_l50_right_offset <- factor(rep(NA, length(data$sel_func)))
+      map$log_ratio_right <- factor(rep(NA, length(data$sel_func)))
   }
   if (data$yield_lambda == 0) {
-      map$catchability <- factor(NA)
-      lower_bounds <- lower_bounds[-4]
-      upper_bounds <- upper_bounds[-4]
+      map$log_catchability <- factor(rep(NA, length(data$sel_func)))
   }
+  
+  lower_bounds <- NULL
+  upper_bounds <- NULL
+  
+  for (p in names(initial_params)) {
+    lb <- lower_bounds_list[[p]]
+    ub <- upper_bounds_list[[p]]
+    
+    if (!is.null(map[[p]])) {
+      keep <- !is.na(as.vector(map[[p]]))
+      lb <- lb[keep]
+      ub <- ub[keep]
+    }
+    lower_bounds <- c(lower_bounds, lb)
+    upper_bounds <- c(upper_bounds, ub)
+  }
+  
   # Prepare the objective function.
   
-  # TMB::compile("./allometric/new_objective_function.cpp", flags = "-Og -g", clean = TRUE, verbose = TRUE)
-  
-  # load('./allometric/prefit.RData')
+  # TMB::compile("./allometric/new_objective_function.cpp", flags = "-O3", clean = TRUE, verbose = TRUE)
   
   dyn.load( TMB::dynlib("./allometric/new_objective_function"))
   
-  obj <- TMB::MakeADFun(data = data, parameters = initial_params, 
-      DLL = "new_objective_function", silent = FALSE, debug = TRUE)
+  obj <- TMB::MakeADFun(data = data, parameters = initial_params, map = map,
+      DLL = "new_objective_function", silent = TRUE, debug = FALSE)
   
   # Perform the optimization.
   optim_result <- nlminb(obj$par, obj$fn, obj$gr,
@@ -469,7 +520,14 @@ matchCatch <- function(params, species = NULL, catch, lambda = 2.05,
   
   # Set model to use the optimal parameters
   w_select <- w(params) %in% data$w
-  optimal_params <- update_params(params, species, optim_result$par, data)
+  
+  # Get all parameters, including fixed ones
+  pars_all <- obj$env$last.par.best
+  if (is.null(pars_all)) pars_all <- obj$env$last.par
+  
+  pars_list <- obj$env$parList(pars_all)
+  
+  optimal_params <- update_params(params, species, pars_list, data)
   
   return(optimal_params)
 }
@@ -529,7 +587,7 @@ update_params <- function(params, species = 1, pars, data) {
   gpnames <- c( 'logit_l50', 'log_ratio_left', 'log_l50_right_offset', 'log_ratio_right',
                 'log_catchability')
   
-  for (i in gpnames) gplist[[i]] <- as.numeric(pars[grep(i, names(pars))])
+  for (i in gpnames) gplist[[i]] <- as.numeric(pars[[i]])
   
   l50 <- min(data$l) + (max(data$l) - min(data$l)) * plogis(gplist$logit_l50)
   l25 <- l50 * (1 - plogis(gplist$log_ratio_left))
@@ -548,13 +606,13 @@ update_params <- function(params, species = 1, pars, data) {
   gear_params(params)[gp_select, ] <- gps
   
   # recalculate the power-law mortality rate
-  sps$mu_mat <- pars["mu_mat"]
-  sps$m <- pars["m"]
+  sps$mu_mat <- pars[["mu_mat"]]
+  sps$m <- pars[["m"]]
   # Note that `mu_mat` is the mortality at the w just below w_mat
   mat_idx <- sum(params@w < sps$w_mat)
   w_mat <- params@w[mat_idx]
   ext_mort(params)[sp_select, ] <-
-    pars["mu_mat"] * (params@w / w_mat)^sps$d
+    pars[["mu_mat"]] * (params@w / w_mat)^sps$d
   
   params@species_params[sp_select, ] <- sps
   params <- setReproduction(params)

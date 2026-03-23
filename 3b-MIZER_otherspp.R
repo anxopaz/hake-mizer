@@ -27,7 +27,6 @@ source('./allometric/new_funs.R')
 
 load('./input/Catch_spp.RData')
 load('./input/other_spp_rmd.RData')
-load( './output/hake_models.RData')
 load( './input/Hake_SS_Data.RData')
 
 
@@ -45,13 +44,11 @@ ssb_long <- bind_rows(other_spp_ices, .id = "species") |> filter( Year >= 1992, 
 ssb_spp <- ssb_long |> pivot_wider( names_from = species, values_from = SSB) |> arrange(Year); ssb_spp
 
 
-# assessment <- assessment |> filter( Year %in% 2014:2023)
-ratio_sb <- mean( assessment$biomass/assessment$SSB)
-
 ## LFD ------------------
 
 LFD_data <- lapply(LFD_spp_tp, function(df) { split(df, df$spp)})
-LFD_total <- lapply(LFD_spp_tp, function(df) { split(df, df$spp) |> lapply(function(x) sum(x$value, na.rm = TRUE))})
+LFD_total <- lapply(LFD_spp_tp, function(df) { split(df, df$spp) |> 
+    lapply(function(x) sum(x$value, na.rm = TRUE))})
 
 
 # MIZER fit (first time period) ---------------------
@@ -61,13 +58,42 @@ lfd_total <- LFD_total$aver_y; lfd_total
 
 bio <- ssb_spp |> filter(Year %in% years$aver_y) |> 
   summarise(across(-Year, ~ mean(.x, na.rm = TRUE))) |> 
-  pivot_longer(cols = everything(), names_to = "species", values_to = "SSB") |>
-  mutate( Bio = SSB * ratio_sb)
-
-bio
+  pivot_longer(cols = everything(), names_to = "species", values_to = "SSB") 
 
 
-# Single fit ---------------
+## Using hake as a reference -----------
+
+load( './output/hake_model.RData')
+
+
+# For Biomass/SSB ratio
+
+ratio_sb <- mean( assessment$biomass/assessment$SSB)
+bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
+
+
+# For mortality
+
+herg <- getEReproAndGrowth(hake_model)
+hwmat <- hake_model@species_params$w_mat
+
+wmatidx <- which( hake_model@w >= hwmat)[1]
+
+hergmat <- approx( hake_model@w, y= herg, xout=hwmat)$y
+
+plot( hake_model@w[1:(wmatidx+5)], herg[1:(wmatidx+5)], 
+      type='l', xlab = 'Weight (g)', ylab = 'EReproAndGrowth')
+
+abline( v = hwmat, col='red', lty = 'dashed')
+abline( h = hergmat, col='red', lty = 'dashed')
+
+hmu <- hake_model@species_params$mu_mat
+
+xi <- (hergmat/hmu)/hwmat; xi
+
+
+
+## Loop ---------------
 
 spp_mods <- catch_mods <- plots_mods <- list()
 
@@ -76,11 +102,14 @@ for(i in spps){
   ipars <- pars |> filter( red == i)
   issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
   ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
+  icom <- ipars$common
+  
+  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
   
   l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
   
   isp <- data.frame( 
-    species = ipars$common, 
+    species = icom, 
     w_mat = lwf( ipars$l_mat, ipars$a, ipars$b),
     w_max = max( lwf( ipars$l_max, ipars$a, ipars$b), lwf( l_max, ipars$a, ipars$b)))
   
@@ -95,11 +124,13 @@ for(i in spps){
   
   igp <- data.frame(
     gear = "Demersales", 
-    species = ipars$common, 
+    species = icom, 
     catchability = 1,
-    sel_func = "sigmoid_length",
+    sel_func = ifelse( ftype == 1, "double_sigmoid_length", "sigmoid_length"),
     l50 = ipars$l_mat,
     l25 = ipars$l_mat*0.8,
+    l50_right = ifelse( ftype == 1, ipars$l_mat*1.05, NA),
+    l25_right = ifelse( ftype == 1, ipars$l_mat*1.2, NA),
     yield_observed = sum(ilfd$catch)
   )
   
@@ -110,25 +141,46 @@ for(i in spps){
   igp$catchability <- igp$yield_observed / yield
   gear_params(imodel) <- igp
   
-  icatch <- ilfd |> mutate( dl = 1, species = ipars$common, gear = "Demersales") |>
+  icatch <- ilfd |> mutate( dl = 1, species = icom, gear = "Demersales") |>
     select( length, catch, dl, species, gear)
   
-  imodel <- matchCatch( imodel, catch = icatch, mu_mat_lim = 2.8)
+  mu_mat_lim <- 4
+  erepro <- 1
   
-  imodel <- steadySingleSpecies( imodel) 
-  imodel <- setBevertonHolt( imodel, reproduction_level = 0.9)
+  while( erepro > 0.5){
+    
+    mu_mat_lim <- mu_mat_lim - 0.05
+    imodel <- suppressWarnings( matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim))
+    erepro <- imodel@species_params$erepro
   
-  print(plotYieldVsSize(imodel, x_var = "Length", catch = icatch))
-  print(plotBiomass(project(imodel,t_max=10)))
+  }
   
-  imodel@species_params
+  print(plotYieldVsSize( imodel, x_var = "Length", catch = icatch))
+  print(plotBiomass( project(imodel,t_max=10)))
   
   spp_mods[[i]] <- imodel
   catch_mods[[i]] <- icatch
   plots_mods[[i]] <- plotYieldVsSize(imodel, x_var = "Length", catch = icatch)
   
+  print( data.frame(spp_mods[[i]]@gear_params)[,(-c(1,2))])
+  
+  cat('\n')
+  
+  print( data.frame( m = spp_mods[[i]]@species_params$m,
+                     erepro = spp_mods[[i]]@species_params$erepro, 
+                     mu_mat = spp_mods[[i]]@species_params$mu_mat))
+  cat('\n'); cat('\n')
+  
+  print(plotYieldVsSize( spp_mods[[i]], x_var = "Length", catch = catch_mods[[i]]))
+  
 }
 
+
+print( data.frame( species = 'Hake', m = hake_model@species_params$m,
+                   erepro = hake_model@species_params$erepro, 
+                   mu_mat = hake_model@species_params$mu_mat))
+
+plotYieldVsSizeByGear( hake_model, catch = hake_catch)
 
 
 save( spp_mods, catch_mods, plots_mods, file = './output/other_spp.RData')
