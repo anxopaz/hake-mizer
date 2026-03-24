@@ -155,9 +155,6 @@ for(i in spps){
   
   }
   
-  print(plotYieldVsSize( imodel, x_var = "Length", catch = icatch))
-  print(plotBiomass( project(imodel,t_max=10)))
-  
   spp_mods[[i]] <- imodel
   catch_mods[[i]] <- icatch
   plots_mods[[i]] <- plotYieldVsSize(imodel, x_var = "Length", catch = icatch)

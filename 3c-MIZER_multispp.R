@@ -93,12 +93,40 @@ plotBiomass(sim)
 
 ## Interaction -------------
 
-msm <- setUniformInteraction( msm)
+backup <- msm
+msm <- backup
+
+nsp <- nrow(species_params(msm))
+sps <- msm@species_params$species
+interaction_mat <- matrix( 0.2, nsp, nsp, dimnames = list(sps, sps))
+
+for(i in sps){
+  if(i %in% c('Megrim', 'Four-spot megrim')) interaction_mat[i,] <- 0.8
+  if(i == 'Hake') interaction_mat[i,] <- 1
+}
+
+msm <- setNotUniformInteraction( msm, interaction_mat = interaction_mat)
 
 plotDiet(msm)
 plotDeath(msm)
-getDietMatrix(msm)
-plotSpectra(msm)
+plotBiomass( project(msm, t_max=10))
+interaction_matrix(msm)
+
+# msm <- backup
+
+hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
+round( hake_diet/ sum(hake_diet), 5)
+round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
+
+dietm <- getDietMatrix(msm); dietm
+dietms <- dietm / rowSums(dietm)
+dietms[,'External'] <- dietms[,'External'] * 0.05
+dietms <- dietms / rowSums(dietms)
+dietms <- dietms[,-(nsp+1)]
+colnames(dietms)[nsp+1] <- 'Others'
+dietms
+
+msm <- matchDiet( msm, diet_matrix=dietms)
 
 hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
 round( hake_diet/ sum(hake_diet), 5)
@@ -106,7 +134,7 @@ round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
 
 sim <- project(msm, t_max = 10)
 plotBiomass(sim)
-
+interaction_matrix(msm)
 
 
 ## Resource ------------
@@ -125,16 +153,21 @@ sim <- project(msm, t_max = 10)
 plotBiomass(sim)
 
 
-sim <- setBevertonHolt(msm, reproduction_level = 0.5)
+msm <- setBevertonHolt(msm, reproduction_level = 0.5)
 
 sim <- project(msm, t_max = 10)
 plotBiomass(sim)
 
-nsp <- nrow(species_params(msm))
+
+
 init_eff <- msm@initial_effort
 
-sim08 <- project( msm, effort = init_eff * 0.8, t_max = 10)
+gp <- gear_params(msm)
+gp['Blue whiting, Demersales', 'catchability'] <- 1000
+gear_params(msm) <- gp
+
+sim08 <- project( msm, effort = init_eff * 1, t_max = 50)
 plotBiomass(sim08)
 
-sim12 <- project( msm, effort = init_eff * 1.2, t_max = 10)
+sim12 <- project( msm, effort = init_eff * 1.5, t_max = 10)
 plotBiomass(sim12)

@@ -135,13 +135,15 @@ for(i in 1:3){
 
 ## ICES for biomass?? --------------
 
+# load( './input/other_spp_rmd.RData')
+
 library(icesSAG)
 
 eng_enc_8 <- getSAG(stock="ane.27.8",year = 2025); tibble(eng_enc_8)
 eng_enc_9a <- getSAG(stock="ane.27.9a",year = 2025); tibble(eng_enc_9a)
 sar_pil_8c9a <- getSAG(stock="pil.27.8c9a",year = 2025); tibble(sar_pil_8c9a)
 tra_tra_9a <- getSAG(stock="hom.27.9a",year = 2025); tibble(tra_tra_9a)
-mic_pou_91214 <- getSAG(stock="whb.27.1-91214",year = 2025); tibble(mic_pou_91214)
+mic_pou_191214 <- getSAG(stock="whb.27.1-91214",year = 2025); tibble(mic_pou_191214)
 sco_sco <- getSAG(stock="mac.27.nea",year = 2025); tibble(sco_sco)
 meg_78abd <- getSAG("meg.27.7b-k8abd", year = 2025); tibble(meg_78abd)
 meg_8c9a <- getSAG("meg.27.8c9a", year = 2025); tibble(meg_8c9a)
@@ -157,25 +159,28 @@ engr_enc <- bind_rows( engr_enc1 |> mutate(stock = "a"), engr_enc2 |> mutate(sto
   summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
 
 
-lep_whi1 <- tibble(meg_78abd)|> select(Year, SSB)
-lep_whi2 <- tibble(meg_8c9a)|> select(Year, SSB)
-lep_bos1 <- tibble(ldb_78abd)|> select(Year, SSB)
-lep_bos2 <- tibble(ldb_8c9a)|> select(Year, SSB)
+# lep_whi1 <- tibble(meg_78abd)|> select(Year, SSB)
+# lep_whi2 <- tibble(meg_8c9a)|> select(Year, SSB)
+# lep_bos1 <- tibble(ldb_78abd)|> select(Year, SSB)
+# lep_bos2 <- tibble(ldb_8c9a)|> select(Year, SSB)
+# 
+# lepi_whi <- bind_rows(lep_whi1, lep_whi2) |> group_by(Year) |>
+#   summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
+# 
+# lepi_bos <- bind_rows(lep_bos1, lep_bos2) |> group_by(Year) |>
+#   summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
 
-lepi_whi <- bind_rows(lep_whi1, lep_whi2) |> group_by(Year) |>
-  summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
+lepi_whi <- tibble(meg_8c9a)|> select(Year, SSB)
 
-lepi_bos <- bind_rows(lep_bos1, lep_bos2) |> group_by(Year) |>
-  summarise(SSB = sum(SSB, na.rm = TRUE), .groups = "drop")
-
+lepi_bos <- tibble(ldb_8c9a)|> select(Year, SSB)
 
 sard_pil <- tibble(sar_pil_8c9a)|> select(Year, SSB)
 
-trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)
+trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)|> mutate(SSB=SSB*2.2)
 
-micr_pou <- tibble(mic_pou_91214)|> select(Year, SSB)
+micr_pou <- tibble(mic_pou_191214)|> select(Year, SSB)|> mutate(SSB=SSB*0.04)
 
-scom_sco <- tibble(sco_sco)|> select(Year, SSB)
+scom_sco <- tibble(sco_sco)|> select(Year, SSB)|> mutate(SSB=SSB*0.04)
 
 
 

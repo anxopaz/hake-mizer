@@ -274,14 +274,14 @@ setUniformInteraction <- function(params) {
   # all species
   scaling <- max_encounter_ratio
   names(scaling) <- params@species_params$species
-  scaling["Mackerel"] <- scaling["Mackerel"] * max(1, max_mort_ratio)
-  scaling["Blue whiting"] <- scaling["Blue whiting"] * max(1, max_mort_ratio)
+  # scaling["Mackerel"] <- scaling["Mackerel"] * max(1, max_mort_ratio)
+  # scaling["Blue whiting"] <- scaling["Blue whiting"] * max(1, max_mort_ratio)
+  scaling <- scaling * max(1, max_mort_ratio)
   
   # Now apply the rescaling of search volume to original model
   # If this is less than 1, we need to adjust the search volume
   params@search_vol <- params@search_vol / scaling
-  params@species_params$gamma <- 
-      params@species_params$gamma / scaling
+  params@species_params$gamma <- params@species_params$gamma / scaling
   
   # This rescaling will have increased the rates
   new_encounter <- getEncounter(params)
@@ -292,14 +292,14 @@ setUniformInteraction <- function(params) {
   params@mu_b <- params@mu_b - new_mort + old_mort
   
   # Check that external rates are positive (up to rounding errors)
-  if (!all((params@ext_encounter / new_encounter) > -1e-13)) {
-      browser()
-      stop("Negative external encounter rates detected")
-  }
-  if (!all((params@mu_b / new_mort) > -1e-13)) {
-      browser()
-      stop("Negative external mortality rates detected")
-  }
+  # if (!all((params@ext_encounter / new_encounter) > -1e-13)) {
+  #     browser()
+  #     stop("Negative external encounter rates detected")
+  # }
+  # if (!all((params@mu_b / new_mort) > -1e-13)) {
+  #     browser()
+  #     stop("Negative external mortality rates detected")
+  # }
   
   # Rounding errors could lead to negative values
   params@ext_encounter[params@ext_encounter < 0] <- 0
@@ -311,6 +311,74 @@ setUniformInteraction <- function(params) {
 isNonInteracting <- function(params) {
   all(params@interaction == 0) && 
     all(params@species_params$interaction_resource ==0)
+}
+
+
+setNotUniformInteraction <- function(params, interaction_mat = 1) {
+  if (!isNonInteracting(params)) {
+    stop("This function should be called with a non-interacting model.")
+  }
+  if (!isAllometric(params)) {
+    stop("This function requires power law encounter and mortality rates.")
+  }
+  
+  old_encounter <- getEncounter(params)
+  old_mort <- getMort(params)
+  
+  params@interaction[] <- interaction_mat
+  # params@species_params$interaction_resource <- 1
+  
+  # To get the encounter and mortality from this interaction set external
+  # rates to 0 temporarily
+  temp_params <- params
+  temp_params@ext_encounter[] <- 0
+  temp_params@mu_b[] <- 0
+  temp_params@initial_effort[] <- 0
+  encounter <- getEncounter(temp_params)
+  
+  # Determine maximum ratio between new encounter rates and external encounter
+  # rates for each species so that we can then divide the search volumes by
+  # those ratios.
+  # We do not have to worry about division by zero because we know that the
+  # external rates are given by power laws, hence never zero.
+  encounter_ratio <- encounter / params@ext_encounter
+  # Calculate the maximum ratio for each species
+  max_encounter_ratio <- apply(encounter_ratio, 1, max)
+  # Rescale search volume
+  temp_params@search_vol <- params@search_vol / max_encounter_ratio
+  
+  # Determine maximum ration between new mortality rates and external mortality
+  # rates. The new mortality rates are the same for all species and depend on
+  # all gammas, so we do not need a separate ratio for each species.
+  mort <- getMort(temp_params)
+  max_mort_ratio <- max(mort / params@mu_b)
+  # If this is greater than 1 we need to decrease gamma rescaling factor for 
+  # all species
+  scaling <- max_encounter_ratio
+  names(scaling) <- params@species_params$species
+  # scaling["Mackerel"] <- scaling["Mackerel"] * max(1, max_mort_ratio)
+  # scaling["Blue whiting"] <- scaling["Blue whiting"] * max(1, max_mort_ratio)
+  scaling <- scaling * max(1, max_mort_ratio)
+  
+  # Now apply the rescaling of search volume to original model
+  # If this is less than 1, we need to adjust the search volume
+  params@search_vol <- params@search_vol / scaling
+  params@species_params$gamma <- params@species_params$gamma / scaling
+  
+  # This rescaling will have increased the rates
+  new_encounter <- getEncounter(params)
+  new_mort <- getMort(params)
+  
+  # Reduce external rates accordingly
+  params@ext_encounter <- params@ext_encounter - new_encounter + old_encounter
+  params@mu_b <- params@mu_b - new_mort + old_mort
+
+  
+  # Rounding errors could lead to negative values
+  params@ext_encounter[params@ext_encounter < 0] <- 0
+  params@mu_b[params@mu_b < 0] <- 0
+  
+  return(params)
 }
 
 
