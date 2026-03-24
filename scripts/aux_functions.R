@@ -244,7 +244,7 @@ setUniformInteraction <- function(params) {
   old_mort <- getMort(params)
   
   params@interaction[] <- 1
-  params@species_params$interaction_resource <- 1
+  # params@species_params$interaction_resource <- 1
   
   # To get the encounter and mortality from this interaction set external
   # rates to 0 temporarily
@@ -272,12 +272,16 @@ setUniformInteraction <- function(params) {
   max_mort_ratio <- max(mort / params@mu_b)
   # If this is greater than 1 we need to decrease gamma rescaling factor for 
   # all species
-  scaling <- max_encounter_ratio * max(1, max_mort_ratio)
+  scaling <- max_encounter_ratio
+  names(scaling) <- params@species_params$species
+  scaling["Mackerel"] <- scaling["Mackerel"] * max(1, max_mort_ratio)
+  scaling["Blue whiting"] <- scaling["Blue whiting"] * max(1, max_mort_ratio)
   
   # Now apply the rescaling of search volume to original model
   # If this is less than 1, we need to adjust the search volume
   params@search_vol <- params@search_vol / scaling
-  params@species_params$gamma <- params@species_params$gamma / scaling
+  params@species_params$gamma <- 
+      params@species_params$gamma / scaling
   
   # This rescaling will have increased the rates
   new_encounter <- getEncounter(params)
@@ -286,6 +290,17 @@ setUniformInteraction <- function(params) {
   # Reduce external rates accordingly
   params@ext_encounter <- params@ext_encounter - new_encounter + old_encounter
   params@mu_b <- params@mu_b - new_mort + old_mort
+  
+  # Check that external rates are positive (up to rounding errors)
+  if (!all((params@ext_encounter / new_encounter) > -1e-13)) {
+      browser()
+      stop("Negative external encounter rates detected")
+  }
+  if (!all((params@mu_b / new_mort) > -1e-13)) {
+      browser()
+      stop("Negative external mortality rates detected")
+  }
+  
   # Rounding errors could lead to negative values
   params@ext_encounter[params@ext_encounter < 0] <- 0
   params@mu_b[params@mu_b < 0] <- 0
@@ -518,295 +533,3 @@ age_mat_vB <- function(object) {
   names(a_mat) <- sp$species
   a_mat
 }
-
-
-
-#' Combine several MizerParams objects
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#'   Takes several \linkS4class{MizerParams} objects and combines them into a
-#'   single \linkS4class{MizerParams} object containing all species. The initial
-#'   abundances of each species are preserved from their individual params
-#'   objects. Cross-group species interactions are set to 1.
-#'
-#' @param ... Two or more \linkS4class{MizerParams} objects to combine.
-#'   Alternatively a single list of \linkS4class{MizerParams} objects.
-#'
-#' @return A \linkS4class{MizerParams} object containing all species from all
-#'   input params objects.
-#'
-#' @details The resource parameters (kappa, lambda, etc.) and the rates
-#'   functions are taken from the first params object. If the input params
-#'   objects use different resource parameters a warning is issued.
-#'
-#'   The size grids of the input params objects must be compatible: they must
-#'   have the same log10 bin size. The combined grid spans the full size range
-#'   needed for all species.
-#'
-#' @seealso [addSpecies()], [removeSpecies()]
-#' @export
-bindParams <- function( params_list) {
-  # params_list <- list(...)
-  if (length(params_list) == 1 && is.list(params_list[[1]])) {
-    params_list <- params_list[[1]]
-  }
-  if (length(params_list) < 2) {
-    stop("bindParams() requires at least 2 MizerParams objects.")
-  }
-  for (i in seq_along(params_list)) {
-    if (!is(params_list[[i]], "MizerParams")) {
-      stop("Argument ", i, " is not a MizerParams object.")
-    }
-  }
-  
-  # Validate all params
-  params_list <- lapply(params_list, validParams)
-  
-  # Check for duplicate species
-  all_sp <- unlist(lapply(params_list, function(p) p@species_params$species))
-  dups <- all_sp[duplicated(all_sp)]
-  if (length(dups) > 0) {
-    stop("The following species appear in more than one params object: ",
-         paste(unique(dups), collapse = ", "))
-  }
-  
-  # Warn if resource params differ across objects
-  rp1 <- params_list[[1]]@resource_params
-  for (i in 2:length(params_list)) {
-    rp2 <- params_list[[i]]@resource_params
-    common <- intersect(names(rp1), names(rp2))
-    if (!isTRUE(all.equal(rp1[common], rp2[common]))) {
-      warning("Resource parameters differ across params objects. ",
-              "Using those from the first params object.")
-      break
-    }
-  }
-  
-  # Iteratively add species from each subsequent params
-  p <- params_list[[1]]
-  for (i in 2:length(params_list)) {
-    p2 <- params_list[[i]]
-    new_sp_names <- p2@species_params$species
-    
-    # New gears from p2 and their initial effort
-    new_gears <- setdiff(unique(p2@gear_params$gear),
-                         unique(p@gear_params$gear))
-    if (length(new_gears) > 0) {
-      new_effort <- p2@initial_effort[new_gears]
-      p <- addSpecies(p, p2@species_params,
-                      gear_params = p2@gear_params,
-                      initial_effort = new_effort)
-    } else {
-      p <- addSpecies(p, p2@species_params,
-                      gear_params = p2@gear_params)
-    }
-    
-    # Indices of the newly added species in the combined params
-    new_sp_idx <- which(p@species_params$species %in% new_sp_names)
-    
-    # Map p2's w bins onto the combined grid (must share same log spacing)
-    p2_log_w <- round(log10(p2@w), 8)
-    p_log_w  <- round(log10(p@w), 8)
-    w_idx <- match(p2_log_w, p_log_w)
-    if (any(is.na(w_idx))) {
-      stop("The size grids of params object ", i, " and the first params ",
-           "object are incompatible. They must have the same log10 bin size.")
-    }
-    
-    # Restore per-species arrays from p2 (addSpecies() recalculates these
-    # from species_params, but they may have been customised in p2)
-    p@initial_n[new_sp_idx, ]       <- 0
-    p@initial_n[new_sp_idx, w_idx]  <- p2@initial_n
-    p@psi[new_sp_idx, ]             <- 0
-    p@psi[new_sp_idx, w_idx]        <- p2@psi
-    p@maturity[new_sp_idx, ]        <- 0
-    p@maturity[new_sp_idx, w_idx]   <- p2@maturity
-    p@mu_b[new_sp_idx, ]            <- 0
-    p@mu_b[new_sp_idx, w_idx]       <- p2@mu_b
-    p@ext_encounter[new_sp_idx, ]   <- 0
-    p@ext_encounter[new_sp_idx, w_idx] <- p2@ext_encounter
-    p@diffusion[new_sp_idx, ]       <- 0
-    p@diffusion[new_sp_idx, w_idx]  <- p2@diffusion
-    p@intake_max[new_sp_idx, ]      <- 0
-    p@intake_max[new_sp_idx, w_idx] <- p2@intake_max
-    p@search_vol[new_sp_idx, ]      <- 0
-    p@search_vol[new_sp_idx, w_idx] <- p2@search_vol
-    p@metab[new_sp_idx, ]           <- 0
-    p@metab[new_sp_idx, w_idx]      <- p2@metab
-    
-    # Restore A and the reproduction params that addSpecies() overwrites
-    p@A[new_sp_idx] <- p2@A
-    p@species_params$erepro[new_sp_idx] <- p2@species_params$erepro
-    p@species_params$R_max[new_sp_idx]  <- p2@species_params$R_max
-  }
-  
-  return(p)
-}
-
-
-
-addSpecies <- function (params, species_params, gear_params = data.frame(), 
-          initial_effort, interaction){
-  params <- validParams(params)
-  given_species_params <- validGivenSpeciesParams(species_params)
-  species_params <- validSpeciesParams(species_params)
-  gear_params <- validGearParams(gear_params, species_params)
-  if (any(species_params$species %in% params@species_params$species)) {
-    stop("You can not add species that are already there.")
-  }
-  if (!is.null(comment(params@pred_kernel))) {
-    stop("addSpecies() can not add species to a MizerParams object that ", 
-         "has its predation kernel protected by a comment.")
-  }
-  if (!is.null(comment(params@selectivity))) {
-    stop("addSpecies() can not add species to a MizerParams object that ", 
-         "has its selectivity array protected by a comment.")
-  }
-  if (!is.null(comment(params@catchability))) {
-    stop("addSpecies() can not add species to a MizerParams object that ", 
-         "has its catchability array protected by a comment.")
-  }
-  no_old_sp <- nrow(params@species_params)
-  old_sp <- 1:no_old_sp
-  no_new_sp <- nrow(species_params)
-  new_sp <- 1:no_new_sp + no_old_sp
-  no_sp <- no_old_sp + no_new_sp
-  if (missing(interaction)) {
-    inter <- matrix(1, nrow = no_sp, ncol = no_sp)
-    inter[old_sp, old_sp] <- params@interaction
-  }
-  else if (all(dim(interaction) == c(no_new_sp, no_new_sp))) {
-    inter <- matrix(1, nrow = no_sp, ncol = no_sp)
-    inter[old_sp, old_sp] <- params@interaction
-    inter[new_sp, new_sp] <- interaction
-  }
-  else if (all(dim(interaction) != c(no_sp, no_sp))) {
-    stop("Interaction matrix has invalid dimensions.")
-  }
-  else {
-    inter <- interaction
-  }
-  params@species_params$linetype <- params@linetype[params@species_params$species]
-  params@species_params$linecolour <- params@linecolour[params@species_params$species]
-  missing <- setdiff(names(params@given_species_params), names(given_species_params))
-  given_species_params[missing] <- NA
-  missing <- setdiff(names(given_species_params), names(params@given_species_params))
-  params@given_species_params[missing] <- NA
-  missing <- setdiff(names(params@species_params), names(species_params))
-  species_params[missing] <- NA
-  missing <- setdiff(names(species_params), names(params@species_params))
-  params@species_params[missing] <- NA
-  combi_species_params <- rbind(params@species_params, species_params, 
-                                stringsAsFactors = FALSE)
-  combi_given_species_params <- rbind(params@given_species_params, 
-                                      given_species_params, stringsAsFactors = FALSE)
-  if (!all(gear_params$species %in% species_params$species)) {
-    stop("gear_params should only set gear parameters for new species.")
-  }
-  if (nrow(gear_params) > 0) {
-    missing <- setdiff(names(params@gear_params), names(gear_params))
-    gear_params[missing] <- NA
-  }
-  if (nrow(params@gear_params) > 0) {
-    missing <- setdiff(names(gear_params), names(params@gear_params))
-    params@gear_params[missing] <- NA
-  }
-  combi_gear_params <- rbind(params@gear_params, gear_params, 
-                             stringsAsFactors = FALSE)
-  no_w <- length(params@w)
-  no_w_full <- length(params@w_full)
-  max_w <- max(params@w)
-  min_w <- min(params@w)
-  new_max_w <- max_w
-  new_min_w <- min_w
-  new_no_w <- no_w
-  extra_no_w <- 0
-  if (max(species_params$w_max) > max(params@w) + .Machine$double.eps) {
-    new_max_w <- max(species_params$w_max)
-    dx <- log10(max_w/min_w)/(no_w - 1)
-    new_no_w <- ceiling(log10(new_max_w/min_w)/dx) + 1
-    new_max_w <- min_w * 10^(dx * (new_no_w - 1))
-  }
-  if (min(species_params$w_min) < min(params@w) - .Machine$double.eps) {
-    new_min_w <- min(species_params$w_min)
-    if (new_min_w < min(params@w_full)) {
-      stop("The smallest egg size is too small.")
-    }
-    sel_min <- combi_species_params$w_min == new_min_w
-    new_min_w <- max(params@w_full[params@w_full <= new_min_w])
-    combi_species_params$w_min[sel_min] <- new_min_w
-    extra_no_w <- sum(params@w_full >= new_min_w) - no_w
-    new_no_w <- new_no_w + extra_no_w
-  }
-  p <- newMultispeciesParams(combi_species_params, interaction = inter, 
-                             max_w = new_max_w, min_w_pp = (params@w_full[[1]] + params@w_full[[2]])/2, 
-                             no_w = new_no_w, gear_params = combi_gear_params, kappa = params@resource_params$kappa, 
-                             n = params@resource_params[["n"]], lambda = params@resource_params$lambda, 
-                             w_pp_cutoff = params@resource_params$w_pp_cutoff)
-  p@given_species_params <- combi_given_species_params
-  new_gear <- setdiff(unique(gear_params$gear), unique(params@gear_params$gear))
-  p@initial_effort[names(params@initial_effort)] <- params@initial_effort
-  if (!missing(initial_effort)) {
-    if (is.null(names(initial_effort))) {
-      stop("The `initial_effort` must be a named list or vector, with one named entry for each new gear introduced in the `gear_params` argument. You should not provide an `initial_effort` argument if you did not introduce any new gear.")
-    }
-    if (!all(names(initial_effort) %in% new_gear)) {
-      stop("The names of the `initial_effort` do not match the names of the new gears. You should not include effort values for existing gear. You should not provide an `initial_effort` argument if you did not introduce any new gear.")
-    }
-    p@initial_effort[names(initial_effort)] <- initial_effort
-  }
-  p@initial_n_pp[1:no_w_full] <- params@initial_n_pp
-  p@cc_pp[1:no_w_full] <- params@cc_pp
-  p@rr_pp[1:no_w_full] <- params@rr_pp
-  p@resource_dynamics <- params@resource_dynamics
-  p@resource_params <- params@resource_params
-  comment(p) <- comment(params)
-  for (slot in (slotNames(p))) {
-    comment(slot(p, slot)) <- comment(slot(params, slot))
-  }
-  old_w <- (extra_no_w + 1):(extra_no_w + no_w)
-  p@A[old_sp] <- params@A
-  p@psi[old_sp, old_w] <- params@psi
-  p@maturity[old_sp, old_w] <- params@maturity
-  p@sc[old_w] <- params@sc
-  p@mu_b[old_sp, old_w] <- params@mu_b
-  p@ext_encounter[old_sp, old_w] <- params@ext_encounter
-  p@intake_max[old_sp, old_w] <- params@intake_max
-  p@search_vol[old_sp, old_w] <- params@search_vol
-  p@metab[old_sp, old_w] <- params@metab
-  p@other_dynamics <- params@other_dynamics
-  p@other_encounter <- params@other_encounter
-  p@other_mort <- params@other_mort
-  p@other_params <- params@other_params
-  p@rates_funcs <- params@rates_funcs
-  p@metadata <- params@metadata
-  p@time_created <- params@time_created
-  p@mizer_version <- params@mizer_version
-  p@extensions <- params@extensions
-  p <- setColours(p, params@linecolour)
-  p <- setLinetypes(p, params@linetype)
-  p@initial_n[old_sp, old_w] <- params@initial_n
-  p@interaction[new_sp, new_sp] <- 0
-  p <- steadySingleSpecies(p, species = new_sp)
-  for (i in new_sp) {
-    idx <- which.max(p@initial_n[i, ] * p@w^p@resource_params$lambda)
-    p@initial_n[i, ] <- p@initial_n[i, ] * p@resource_params$kappa * 
-      p@w[idx]^(-p@resource_params$lambda)/p@initial_n[i, 
-                                                       idx]/100
-    p@A[i] <- sum(p@initial_n[i, ] * p@w * p@dw * p@maturity[i, 
-    ])
-  }
-  if (any(is.infinite(p@initial_n))) {
-    stop("Candidate steady state holds infinities.")
-  }
-  if (any(is.na(p@initial_n) | is.nan(p@initial_n))) {
-    stop("Candidate steady state holds non-numeric values.")
-  }
-  p@interaction[new_sp, new_sp] <- inter[new_sp, new_sp]
-  repro_level <- rep(1/4, length(new_sp))
-  names(repro_level) <- p@species_params$species[new_sp]
-  p <- setBevertonHolt(p, reproduction_level = repro_level)
-  return(p)
-}
-
