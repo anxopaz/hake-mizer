@@ -34,7 +34,7 @@ load( './input/Hake_SS_Data.RData')   # './scripts/WGBIE24.R' WGBIE assessment r
 ## Species params
 
 sp <- bio_pars@species_params |>
-  select(species, w_mat, age_mat, w_max, a, b, n, pred_kernel_type, beta, sigma)
+  select(species, w_mat, age_mat, w_max, a, b, pred_kernel_type, beta, sigma)
 
 # Biomass
 quantity <- 'biomass' # 'SSB'
@@ -293,9 +293,6 @@ getReproductionLevel( hake_model_erepro05)
 
 hake_model <- hake_model_fleets
 hake_catch <- catch_allfleets
-
-hake_model <- steadySingleSpecies( hake_model) 
-hake_model <- setBevertonHolt( hake_model, reproduction_level = 0.9)
 
 # save.image( './output/hake_model_full.RData')
 

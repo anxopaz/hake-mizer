@@ -30,32 +30,23 @@ load( './output/other_spp.RData')
 for(i in 1:length(spp_mods)) print(getBiomass(spp_mods[[i]], use_cutoff = TRUE)/spp_mods[[i]]@species_params$biomass_observed)
 getBiomass(hake_model, use_cutoff = TRUE)/hake_model@species_params$biomass_observed
 
-for(i in 1:length(spp_mods)) print(getBiomass(spp_mods[[i]]), use_cutoff = TRUE)
-getBiomass(hake_model, use_cutoff = TRUE)
 
-
-# Other option -----------
+# Bind species in MS model -----------
 
 allcatch <- c( list( Hake = hake_catch), catch_mods)
 allmods <- c( Hake = hake_model, spp_mods)
 
 catchdf <- bind_rows( allcatch) 
 
-save( allmods, file='./mods.RData')
+save( allmods, allcatch, catchdf, file='./input/mods.RData')
 
-multi_sp <- mizerEcopath::bindParams( allmods)
+msm <- mizerEcopath::bindParams( allmods)
 
+msm@linecolour[1:8] <- NS_params@linecolour[1:8]
 
-## Gear parameters --------------
-gp <- multi_sp@gear_params
-
-backup <- multi_sp
-multi_sp <- backup
-
-multi_sp <- setBevertonHolt(multi_sp, reproduction_level = 0)
-
-sim <- project(multi_sp, t_max = 10)
+sim <- project(msm, t_max = 10)
 plotBiomass(sim)
+
 
 ## Predation ---------------------
 
@@ -63,7 +54,7 @@ plotBiomass(sim)
 # except Anchovy and Sardine that are determined from Mariella's data
 # and Hake from own data
 
-sp <- multi_sp@species_params
+sp <- msm@species_params
 
 celpars <- mizerEcopath::celtic_params@species_params
 
@@ -89,54 +80,61 @@ sp[which(sp$species=='Hake'), 'pred_kernel_type'] <- 'lognormal'     # comment f
 anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
 sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
 
-multi_sp@species_params <- sp
-
-## Feeding Levels
-# The next line is needed only due to bug in newAllometricParams()
-multi_sp@species_params$p <- multi_sp@species_params$n
-
-multi_sp <- setFeedingLevels(multi_sp, f = 0.6, f_c = 0.2)
+msm@species_params <- sp
 
 
-sim <- project(multi_sp, t_max = 10)
+## Feeding Levels --------------
+
+msm <- setFeedingLevels(msm, f = 0.6, f_c = 0.2)
+
+sim <- project(msm, t_max = 10)
 plotBiomass(sim)
+
 
 ## Interaction -------------
 
-backup <- multi_sp
-multi_sp <- backup
+msm <- setUniformInteraction( msm)
 
-multi_sp <- setUniformInteraction( multi_sp)
-multi_sp@linecolour[1:8] <- NS_params@linecolour[1:8]
-plotDiet(multi_sp)
-plotDeath(multi_sp)
-getDietMatrix(multi_sp)
-plotSpectra(multi_sp)
+plotDiet(msm)
+plotDeath(msm)
+getDietMatrix(msm)
+plotSpectra(msm)
 
-sim <- project(multi_sp, t_max = 10)
-plotBiomass(sim)
+hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
+round( hake_diet/ sum(hake_diet), 5)
+round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
 
-## Resource
-
-multi_sp <- alignResource(multi_sp, w_pp_cutoff = 1)
-multi_sp <- setResourceInteraction(multi_sp, "resource_semichemostat")
-
-resource_level(multi_sp)
-plotSpectra(multi_sp)
-
-backup2 <- multi_sp
-multi_sp <- backup2
-
-sim <- project(multi_sp, t_max = 10)
-plotBiomass(sim)
-
-interaction_matrix(multi_sp)
-sp <- species_params(multi_sp); sp
-
-
-
-
-sim <- project(multi_sp, t_max = 10)
+sim <- project(msm, t_max = 10)
 plotBiomass(sim)
 
 
+
+## Resource ------------
+
+backup <- msm
+
+msm <- backup
+
+msm <- alignResource(msm, w_pp_cutoff = 1)
+# msm <- setResourceInteraction(msm, "resource_semichemostat")
+
+resource_level(msm)
+plotSpectra(msm)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+
+
+sim <- setBevertonHolt(msm, reproduction_level = 0.5)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+
+nsp <- nrow(species_params(msm))
+init_eff <- msm@initial_effort
+
+sim08 <- project( msm, effort = init_eff * 0.8, t_max = 10)
+plotBiomass(sim08)
+
+sim12 <- project( msm, effort = init_eff * 1.2, t_max = 10)
+plotBiomass(sim12)
