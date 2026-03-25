@@ -81,6 +81,7 @@ anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
 sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
 
 msm@species_params <- sp
+msm <- setPredKernel(msm)
 
 
 ## Feeding Levels --------------
@@ -93,9 +94,6 @@ plotBiomass(sim)
 
 ## Interaction -------------
 
-backup <- msm
-msm <- backup
-
 nsp <- nrow(species_params(msm))
 sps <- msm@species_params$species
 interaction_mat <- matrix( 0.2, nsp, nsp, dimnames = list(sps, sps))
@@ -105,46 +103,48 @@ for(i in sps){
   if(i == 'Hake') interaction_mat[i,] <- 1
 }
 
+msm1 <- setUniformInteraction( msm)
+msm12 <- setNotUniformInteraction( msm) # the results of this two options should be the same
+
 msm <- setNotUniformInteraction( msm, interaction_mat = interaction_mat)
 
-plotDiet(msm)
-plotDeath(msm)
+interaction_matrix(msm); interaction_matrix(msm1); interaction_matrix(msm12)
+
+plotDiet(msm); plotDiet(msm1); plotDiet(msm12)
+plotDeath(msm); plotDeath(msm1); plotDeath(msm12)
+
 plotBiomass( project(msm, t_max=10))
-interaction_matrix(msm)
+plotBiomass( project(msm1, t_max=10))
+plotBiomass( project(msm12, t_max=10))
 
-# msm <- backup
-
-hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
-round( hake_diet/ sum(hake_diet), 5)
-round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
-
-dietm <- getDietMatrix(msm); dietm
-dietms <- dietm / rowSums(dietm)
-dietms[,'External'] <- dietms[,'External'] * 0.05
-dietms <- dietms / rowSums(dietms)
-dietms <- dietms[,-(nsp+1)]
-colnames(dietms)[nsp+1] <- 'Others'
-dietms
-
-msm <- matchDiet( msm, diet_matrix=dietms)
-
-hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
-round( hake_diet/ sum(hake_diet), 5)
-round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
-
-sim <- project(msm, t_max = 10)
-plotBiomass(sim)
-interaction_matrix(msm)
+ 
+# hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
+# round( hake_diet/ sum(hake_diet), 5)
+# round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
+# 
+# dietm <- getDietMatrix(msm); dietm
+# dietms <- dietm / rowSums(dietm)
+# dietms[,'External'] <- dietms[,'External'] * 0.05
+# dietms <- dietms / rowSums(dietms)
+# dietms <- dietms[,-(nsp+1)]
+# colnames(dietms)[nsp+1] <- 'Others'
+# dietms
+# 
+# msm <- matchDiet( msm, diet_matrix=dietms)
+# 
+# hake_diet <- getDietMatrix(msm, min_w_pred = 100)['Hake',]; hake_diet
+# round( hake_diet/ sum(hake_diet), 5)
+# round( hake_diet[-(9:10)]/ sum(hake_diet[-(9:10)]), 5)
+# 
+# sim <- project(msm, t_max = 10)
+# plotBiomass(sim)
+# interaction_matrix(msm)
 
 
 ## Resource ------------
 
-backup <- msm
-
-msm <- backup
-
 msm <- alignResource(msm, w_pp_cutoff = 1)
-# msm <- setResourceInteraction(msm, "resource_semichemostat")
+msm <- setResourceInteraction(msm, "resource_semichemostat")
 
 resource_level(msm)
 plotSpectra(msm)
@@ -160,14 +160,22 @@ plotBiomass(sim)
 
 
 
-init_eff <- msm@initial_effort
+
+init_eff <- msm@initial_effort; init_eff
+
+sim05 <- project( msm, effort = init_eff * 0.8, t_max = 50)
+plotBiomass(sim05)
+
+sim15 <- project( msm, effort = init_eff * 1.5, t_max = 50)
+plotBiomass(sim15)
 
 gp <- gear_params(msm)
-gp['Blue whiting, Demersales', 'catchability'] <- 1000
-gear_params(msm) <- gp
+gp['Blue whiting, Demersales', 'catchability'] <- gp['Blue whiting, Demersales', 'catchability'] * 200
+msm2 <- msm
+gear_params(msm2) <- gp
 
-sim08 <- project( msm, effort = init_eff * 1, t_max = 50)
-plotBiomass(sim08)
+sim05 <- project( msm2, effort = init_eff * 0.8, t_max = 50)
+plotBiomass(sim05)
 
-sim12 <- project( msm, effort = init_eff * 1.5, t_max = 10)
-plotBiomass(sim12)
+sim15 <- project( msm2, effort = init_eff * 1.5, t_max = 50)
+plotBiomass(sim15)

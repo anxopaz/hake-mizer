@@ -147,7 +147,7 @@ getReproductionLevel( hake_model_erepro05)
 # surveys_data <- LFD_list_surv$aver_y
 # 
 # 
-# ### All in one survey 
+# ### All in one survey
 # 
 # onesurvey <- surveys_data |> group_by(length) |> summarise(catch = sum(number)) |>
 #   mutate( dl = 1, species = 'Hake', gear = "Surveys")
@@ -157,7 +157,7 @@ getReproductionLevel( hake_model_erepro05)
 # surv_names <- unique( onesurvey$gear)
 # 
 # gp <- data.frame(
-#   gear = surv_names, 
+#   gear = surv_names,
 #   species = "Hake",
 #   sel_func = rep( 'sigmoid_length', length(surv_names)),
 #   l50 = max_length$length*0.8,
@@ -190,7 +190,7 @@ getReproductionLevel( hake_model_erepro05)
 # surv_names <- unique( surveys$gear)
 # 
 # gp <- data.frame(
-#   gear = surv_names, 
+#   gear = surv_names,
 #   species = "Hake",
 #   sel_func = rep( 'sigmoid_length', length(surv_names)),
 #   l50 = max_length$length*0.8,
@@ -223,7 +223,7 @@ getReproductionLevel( hake_model_erepro05)
 # gear_names <- c( unique( catch_allfleets$gear), unique( surveys$gear))
 # 
 # gp <- data.frame(
-#   gear = gear_names, 
+#   gear = gear_names,
 #   species = "Hake",
 #   sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
 #   l50 =       c( 30, 30, 30, 15, 30, 50, 30, 30, 50, max_length$length*0.7),
@@ -234,7 +234,7 @@ getReproductionLevel( hake_model_erepro05)
 #   catchability = c(corLFDs$catch,surveys_sum$catch)/sum(corLFDs$catch,surveys_sum$catch))
 # 
 # # gp <- data.frame(
-# #   gear = gear_names, 
+# #   gear = gear_names,
 # #   species = "Hake",
 # #   sel_func = ifelse( gear_names == 'palangre', 'sigmoid_length', 'double_sigmoid_length'),
 # #   l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1, max_length$length*0.7),

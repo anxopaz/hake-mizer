@@ -1,0 +1,633 @@
+---
+title: "MIZER"
+author: "Anxo Paz"
+date: "04/03/2026"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr) 
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+library(plotly)
+library(reshape)
+library(sm)
+library(mizer)
+library(mizerExperimental)
+library(mizerEcopath)
+library(TMB)
+
+source('scripts/aux_functions.R')
+source('allometric/new_funs.R')
+```
+
+## Hake models
+<br>
+Hake is the species for which we have the most information, and therefore we will work with it first.
+
+<br><br>
+
+### Load biological parameters and catch data
+
+```{r}
+# Biological parameters ----------------------------
+
+load('input/Bio_Pars.RData')
+load('input/Catch.RData') 
+load('input/Hake_SS_Data.RData')
+
+## Species params
+
+sp <- bio_pars@species_params |>
+  select(species, w_mat, age_mat, w_max, a, b, pred_kernel_type, beta, sigma)
+
+
+# Biomass ------------
+
+quantity <- 'biomass' # 'SSB'
+ss_biomass <- assessment[,quantity][assessment$Year %in% aver_y]*1e6  # SS biomass (tonnes to grams)
+obs_q <- sum(ss_biomass)/length(aver_y)
+b_min <- lwf(4,a,b)
+sp$biomass_observed <- obs_q
+sp$biomass_cutoff <- b_min
+
+l_max <- 1.001 * max(corLFD$length + 1, na.rm = TRUE)
+sp$w_max = lwf(l_max, sp$a, sp$b)
+
+sp$d <- -0.1217
+
+
+## Allometric params
+
+hake_model <- newAllometricParams(sp)
+
+
+```
+<br><br>
+
+### One fleet (from commercial landings)
+
+```{r}
+
+gp <- data.frame(
+  gear = "Total", species = "Hake", catchability = 1,
+  sel_func = "sigmoid_length",
+  l50 = 30,
+  l25 = 28,
+  yield_observed = sum(corLFDs$catch)
+)
+
+gear_params(hake_model) <- gp
+initial_effort(hake_model) <- 1
+
+yield <- getYield(hake_model)
+gp$catchability <- gp$yield_observed / yield
+gear_params(hake_model) <- gp
+
+catch_onefleet <- corLFD |> group_by(length) |> summarise(catch = sum(number)) |>
+  mutate( dl = 1, species = 'Hake', gear = "Total")
+
+hake_model_newfun <- matchCatch(hake_model, catch = catch_onefleet)
+plotYieldVsSize(hake_model_newfun, x_var = "Length", catch = catch_onefleet)
+
+```
+<br><br>
+
+### Multiple fleets (from landings)
+
+```{r,results='hide'}
+
+catch_allfleets <- corLFD |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear)
+
+gear_names <- unique( catch_allfleets$gear)
+
+gp <- data.frame(
+  gear = gear_names, 
+  species = "Hake",
+  sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+  l50 =       c( 28.6, 30.7, 29.8, 14.8, 27.5, 30.3, 51.2, 54.9, 16.1),
+  l25 =       c( 23.8, 28.5, 27.4, 13.0, 26.6, 28.1, 47.5, 51.3, 13.5),
+  l50_right = c( 38.3, 33.6, 42.0, 20.6, 33.1, NA,   58.0, 54.4, NA  ),
+  l25_right = c( 43.3, 45.0, 47.8, 27.0, 38.9, NA,   67.9, 60.8, NA  ),
+  yield_observed = corLFDs$catch,
+  catchability = corLFDs$catch/sum(corLFDs$catch))
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+hake_model_fleets <- matchCatch(hake_model, catch = catch_allfleets)
+
+plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
+plotBiomass( project(hake_model_fleets, t_max=10))
+
+```
+<br><br>
+
+### Only with survey's data
+<br>
+
+We wanted to test a model that only considered surveys as a source of information, since for the rest of the species we will only consider one survey to calibrate it.
+
+```{r,results='hide'}
+
+surveys_sum <- LFD_sum_surv$aver_y
+surveys_data <- LFD_list_surv$aver_y
+
+### All in one survey
+
+onesurvey <- surveys_data |> group_by(length) |> summarise(catch = sum(number)) |>
+  mutate( dl = 1, species = 'Hake', gear = "Surveys")
+
+max_length <- onesurvey %>% filter(catch == max(catch)) %>% ungroup()
+
+surv_names <- unique( onesurvey$gear)
+
+gp <- data.frame(
+  gear = surv_names,
+  species = "Hake",
+  sel_func = rep( 'sigmoid_length', length(surv_names)),
+  l50 = max_length$length*0.8,
+  l25 = max_length$length*0.7,
+  l50_right = rep( NA, length(surv_names)),
+  l25_right = rep( NA, length(surv_names)),
+  yield_observed = sum(surveys_sum$catch),
+  catchability = 1)
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+hake_model_onesurvey <- matchCatch(hake_model, catch = onesurvey)
+plotYieldVsSizeByGear(hake_model_onesurvey, catch = onesurvey)
+
+
+```
+
+
+```{r,results='hide'}
+
+### Three separated surveys
+
+surveys <- surveys_data |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear)
+
+max_length <- surveys %>% group_by(gear) %>%
+  filter(catch == max(catch)) %>% ungroup()
+
+surv_names <- unique( surveys$gear)
+
+gp <- data.frame(
+  gear = surv_names,
+  species = "Hake",
+  sel_func = rep( 'sigmoid_length', length(surv_names)),
+  l50 = max_length$length*0.8,
+  l25 = max_length$length*0.7,
+  l50_right = rep( NA, length(surv_names)),
+  l25_right = rep( NA, length(surv_names)),
+  yield_observed = surveys_sum$catch,
+  catchability = surveys_sum$catch/sum(surveys_sum$catch))
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+hake_model_surveys <- matchCatch(hake_model, catch = surveys)
+plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
+
+gp <- data.frame(
+  gear = surv_names,
+  species = "Hake",
+  sel_func = rep( 'double_sigmoid_length', length(surv_names)),
+  l50 = max_length$length*0.8,
+  l25 = max_length$length*0.7,
+  l50_right = max_length$length*1.2,
+  l25_right = max_length$length*1.3,
+  yield_observed = surveys_sum$catch,
+  catchability = surveys_sum$catch/sum(surveys_sum$catch))
+
+gear_params(hake_model) <- gp
+
+hake_model_surveys <- matchCatch(hake_model, catch = surveys)
+plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
+```
+<br>
+
+It seems the in these cases the sigmoid selectivity is not appropriate, because setting this tells the model that there is no fish in bigger sizes, but setting it double sigmoid also gives few information to the model.
+<br><br>
+
+### All catch data
+<br>
+
+At last, we also try to run a model with both data sources (commercial landings and surveys)
+
+```{r,results='hide'}
+surveys <- surveys_data |>
+  mutate( catch = number, gear = fleet, dl = 1, species = 'Hake') |>
+  select( length, catch, dl, species, gear) |>
+  mutate( gear = paste0('y_', gear))      # to maintain alphabetical order
+
+all_c <- rbind( catch_allfleets, surveys); all_c
+
+gear_names <- c( unique( catch_allfleets$gear), unique( surveys$gear))
+
+gp <- data.frame(
+  gear = gear_names,
+  species = "Hake",
+  sel_func = ifelse( gear_names %in% c('palangre','vol'), 'sigmoid_length', 'double_sigmoid_length'),
+  l50 =       c( 30, 30, 30, 15, 30, 50, 30, 30, 50, max_length$length*0.7),
+  l25 =       c( 25, 25, 25, 10, 25, 45, 25, 25, 45, max_length$length*0.6),
+  l50_right = c( 35, 35, 35, 20, 35, NA, 35, 35, NA, max_length$length*1.1),
+  l25_right = c( 40, 40, 40, 25, 40, NA, 40, 40, NA , max_length$length*1.2),
+  yield_observed = c(corLFDs$catch,surveys_sum$catch),
+  catchability = c(corLFDs$catch,surveys_sum$catch)/sum(corLFDs$catch,surveys_sum$catch))
+
+gear_params(hake_model) <- gp
+
+initial_effort(hake_model) <- 1
+
+hake_m <- matchCatch(hake_model, catch = all_c)
+plotYieldVsSizeByGear(hake_m, catch = all_c)
+
+```
+<br><br>
+
+
+### Selected model
+<br>
+
+The final decision, considering the results, was to continue with the model with the commercial landigs data.  
+
+With this model, where playback is not initially active, we wanted to see what would happen considering different playback levels, to verify that the "erepro" values remained within feasible ranges.
+
+
+```{r}
+
+hake_model <- hake_model_fleets 
+hake_catch <- catch_allfleets
+
+hake_model_0 <- setBevertonHolt( hake_model, reproduction_level = 0)
+hake_model_0@species_params$erepro
+
+hake_model_99 <- setBevertonHolt( hake_model, reproduction_level = 0.99)
+hake_model_99@species_params$erepro
+
+hake_model_erepro05 <- setBevertonHolt( hake_model, erepro = 0.5)
+getReproductionLevel( hake_model_erepro05)
+```
+<br><br><br>
+
+## Other species
+
+We have some information for other species as well, but not as complete as in the hake case.
+
+```{r}
+
+load('input/Catch_spp.RData')
+load('input/other_spp_rmd.RData')
+
+# Parameters
+
+pars <- other_spp$short_fb
+tibble( pars)
+
+spps <- pars$red
+
+
+## SSB --------------
+
+ssb_long <- bind_rows(other_spp_ices, .id = "species") |> filter( Year >= 1992, Year <= 2023)
+ssb_spp <- ssb_long |> pivot_wider( names_from = species, values_from = SSB) |> arrange(Year); ssb_spp
+
+
+## LFD ------------------
+
+LFD_data <- lapply(LFD_spp_tp, function(df) { split(df, df$spp)})
+LFD_total <- lapply(LFD_spp_tp, function(df) { split(df, df$spp) |> 
+    lapply(function(x) sum(x$value, na.rm = TRUE))})
+
+LFD_data$aver_y |> bind_rows() |> pivot_wider( names_from = spp, values_from = value) |> arrange(length)
+
+```
+
+<br><br>
+
+The major problem with this catch data is that it comes from a survey ("Demersal") that is highly selective for certain size ranges. Furthermore, it is not specific to any particular species, so this specific size range means that for some species, such as small pelagic fish, the sizes will correspond to large individuals, while for demersal fish, which reach larger sizes, something similar to what occurred with hake will happen. In other words, how the fleet's selectivity is handled can lead to different interpretations by the model (or it may assume that there are no large fish because it cannot find them, or that there is a significant lack of information on the largest sizes).
+
+On the other hand, we have no information regarding the total biomass of each species, but we do have information on the subsurface biomass (SSB). Here, it was decided to consider the SSB/biomass ratio of hake and extrapolate it to other species.
+
+It should also be noted that in some cases the SSB obtained from the assessment models of the different species did not correspond to the study area. For example, the hake biomass corresponds to that estimated for ICES areas 8c9a, as does the biomass of some other species, but not all, such as blue whiting or mackerel. Failing to consider these differences led to models clearly dominated by these species, even though in none of them are they top predators at all (this is something we will see later, but which was addressed in a limited way).
+
+HERE THERE IS CLEARLY GREAT ROOM FOR IMPROVEMENT IN THE MODEL
+
+<br>
+```{r}
+
+lfd <- LFD_data$aver_y
+lfd_total <- LFD_total$aver_y
+
+bio <- ssb_spp |> filter(Year %in% years$aver_y) |> 
+  summarise(across(-Year, ~ mean(.x, na.rm = TRUE))) |> 
+  pivot_longer(cols = everything(), names_to = "species", values_to = "SSB") 
+
+
+## Using hake as a reference for Biomass/SSB ratio
+
+ratio_sb <- mean( assessment$biomass/assessment$SSB)
+bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
+```
+
+```{r,results='hide'}
+
+# trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)|> mutate(SSB=SSB*1.6)
+# micr_pou <- tibble(mic_pou_191214)|> select(Year, SSB)|> mutate(SSB=SSB*0.04)
+# scom_sco <- tibble(sco_sco)|> select(Year, SSB)|> mutate(SSB=SSB*0.04)
+
+```
+
+
+At this point, it's worth noting that adjusting each species separately led to erepro values greater than 1, which doesn't make sense. This is because, when allocating available energy for reproduction and growth, the portion dedicated to reproduction started earlier than expected due to the fixed value for $m$ in the equation used to obtain $\psi$. However, we allowed this m to vary during the optimization process.
+
+```{r,results='hide'}
+spp_mods <- catch_mods <- plots_mods <- list()
+
+for(i in spps){
+  
+  ipars <- pars |> filter( red == i)
+  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
+  icom <- ipars$common
+  
+  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
+  
+  l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
+  
+  isp <- data.frame( 
+    species = icom, 
+    w_mat = lwf( ipars$l_mat, ipars$a, ipars$b),
+    w_max = max( lwf( ipars$l_max, ipars$a, ipars$b), lwf( l_max, ipars$a, ipars$b)))
+  
+  isp$age_mat = laf( ipars$l_mat, ipars$l_inf, ipars$kvb, ipars$al0)
+  isp$a = ipars$a
+  isp$b = ipars$b 
+  
+  isp$biomass_observed <- issb$Bio
+  isp$biomass_cutoff <- lwf(4,ipars$a,ipars$b)
+  
+  imodel <- newAllometricPars( isp, max_w = hake_model@species_params$w_max)
+  
+  igp <- data.frame(
+    gear = "Demersales", 
+    species = icom, 
+    catchability = 1,
+    sel_func = ifelse( ftype == 1, "double_sigmoid_length", "sigmoid_length"),
+    l50 = ipars$l_mat,
+    l25 = ipars$l_mat*0.8,
+    l50_right = ifelse( ftype == 1, ipars$l_mat*1.05, NA),
+    l25_right = ifelse( ftype == 1, ipars$l_mat*1.2, NA),
+    yield_observed = sum(ilfd$catch)
+  )
+  
+  gear_params(imodel) <- igp
+  initial_effort(imodel) <- 1
+  
+  yield <- getYield(imodel)
+  igp$catchability <- igp$yield_observed / yield
+  gear_params(imodel) <- igp
+  
+  icatch <- ilfd |> mutate( dl = 1, species = icom, gear = "Demersales") |>
+    select( length, catch, dl, species, gear)
+  
+  mu_mat_lim <- 4
+  erepro <- 1
+  
+  while( erepro > 0.5){
+    
+    mu_mat_lim <- mu_mat_lim - 0.05
+    imodel <- suppressWarnings( matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim))
+    erepro <- imodel@species_params$erepro
+  
+  }
+  
+  spp_mods[[i]] <- imodel
+  catch_mods[[i]] <- icatch
+  plots_mods[[i]] <- plotYieldVsSize(imodel, x_var = "Length", catch = icatch)
+  
+  print( data.frame(spp_mods[[i]]@gear_params)[,(-c(1,2))])
+  
+  cat('\n')
+  
+  print( data.frame( m = spp_mods[[i]]@species_params$m,
+                     erepro = spp_mods[[i]]@species_params$erepro, 
+                     mu_mat = spp_mods[[i]]@species_params$mu_mat))
+  
+  print( paste0('erepro for a reproduction_level=0.5: ',
+    round( setBevertonHolt(imodel, reproduction_level = 0.5)@species_params$erepro, 4)))
+  
+  cat('\n'); cat('\n')
+  
+  print(plotYieldVsSize( spp_mods[[i]], x_var = "Length", catch = catch_mods[[i]]))
+  
+}
+```
+<br><br>
+
+At this point, two things are worth highlighting. First, the adjustment using the previous function resulted in exaggerated external mortality, leading to very high $erepro$ values. We came up with the solution of setting an upper limit to prevent mortality from being so high. The problem is knowing how to limit it. Here we realized that when allocating available energy for reproduction and growth, the portion corresponding to reproduction started earlier than expected due to the value set for $m$ in the equation for obtaining $\psi$. However, we allowed this $m$ to vary in the optimization, so less was invested in reproduction in smaller sizes, which in turn reduced the need for such a high mortality limit. Taking these two aspects into account, the loop shows how erepro is calculated after an initial adjustment to bring it to a reasonable value (< 0.5), decreasing this new `mu_mat_lim` argument in the `matchCatch()` function and allowing $m$ to be estimated.
+
+<br><br><br>
+
+
+## Multispcies modeling 
+<br>
+Now, with fishing mortality adjusted for each species separately, we can build our first multispecies model. Things to consider:
+
+* The models must be in a steady state, which is a direct consequence of the previous adjustment.
+
+* Each model must have zero interaction with both resources and other species. No interaction is necessary at this stage, as we are currently only modeling the balance between growth and mortality, and the only sources of mortality are fishing and external factors, which should be sufficient to explain the system's behavior.
+
+Furthermore, it is not yet necessary to define the desired reproduction level.
+
+The function for linking species has been modified to transmit not only biological and fishing parameter information, but also available biomass and mortality associated with each model.
+
+We are also checking that the full multispecies model is in steady state too (it should be because we didn't modify anithing at this point, species are non interacting)
+
+```{r,results='hide'}
+
+allcatch <- c( list( Hake = hake_catch), catch_mods)
+allmods <- c( Hake = hake_model, spp_mods)
+
+catchdf <- bind_rows( allcatch) 
+
+msm <- mizerEcopath::bindParams( allmods)
+
+msm@linecolour[1:8] <- NS_params@linecolour[1:8] # this should be solved at some point
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+
+plotSpectra(msm)
+
+```
+<br><br>
+
+### Predation
+<br>
+
+To activate the interaction, thus triggering predation mortality, the parameters for the pred_kernel of the model for the North Celtic Sea were first selected for the species that matched, since we only had known information for the hake. For the other species, Anchovy and Sardine, these were obtained from Mariella's data.
+
+It's worth mentioning in this section that we discovered that simply changing the parameters directly in the `species_params` object wasn't enough (this can't be done with the `species_params()` function at the moment because it leads to an incorrect interpretation of them), we also had to inform the model using the `setPredKernel()` function to take these changes into account.
+
+```{r,results='hide'}
+sp <- msm@species_params
+
+celpars <- mizerEcopath::celtic_params@species_params
+
+anc_sar_kerpars <- 
+  readRDS("data/anchovy_sardine_kernel_params.rds")
+
+trcols <- c("pred_kernel_type", "kernel_exp", "kernel_l_l", "kernel_u_l", "kernel_l_r", "kernel_u_r")
+
+for (col in trcols) {if (!col %in% names(sp)) { sp[[col]] <- NA}}
+
+for (i in seq_len(nrow(sp))) {
+  sp_name <- sp$species[i]
+  if (sp_name %in% celpars$species) {
+    row_cel <- celpars[celpars$species == sp_name, trcols]
+    sp[i, trcols] <- row_cel
+  }
+}
+
+sp[sp$species == "Four-spot megrim", trcols] <- sp[sp$species == "Megrim", trcols]
+
+sp[which(sp$species=='Hake'), 'pred_kernel_type'] <- 'lognormal'     # comment for using celtic values
+
+anc_sar_kerpars$pred_kernel_type <- anc_sar_kerpars$kernel_type
+sp[c('Anchovy','Pilchard'),trcols] <- anc_sar_kerpars[,trcols]
+
+msm@species_params <- sp
+msm <- setPredKernel(msm)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+```
+<br><br>
+
+### Feeding level
+<br>
+
+The next step, after turning on the predation kernel parameters, is determining the feeding level. For this process we are using the default parameters.
+
+
+```{r,results='hide'}
+
+msm <- setFeedingLevels(msm, f = 0.6, f_c = 0.2)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+
+```
+<br><br>
+
+### Interaction
+<br>
+
+Now it's time to turn on the interaction between all the species involved in the model. There are two options available at this moment, using an uniform interaction matrix, that set all the interactions equal to 1 (the default value where the predation is only determined by the predator/prey sizes relationship), or creating an ad-hoc matrix where you can establish different preferences for each predator and prey. 
+
+These functions allow us to extract predation mortality from external mortality, considering that one must be reduced relative to the other to avoid disrupting the system's steady state. To do this, the encounter rate and associated mortality for each species are extracted before predation is triggered, and then the difference obtained in this process is subtracted.
+
+For this specific case, the decision that we made is to define the top-predators (demersal fishes) and establish some differences in comparison with the pelagic fish (the biological reason behind this decision is that in the water column top-predators comes up to eat, but the pelagic ones do not show the opposite bahaviour).
+
+```{r,results='hide'}
+
+nsp <- nrow(species_params(msm))
+sps <- msm@species_params$species
+interaction_mat <- matrix( 0.2, nsp, nsp, dimnames = list(sps, sps))
+
+for(i in sps){
+  if(i %in% c('Megrim', 'Four-spot megrim')) interaction_mat[i,] <- 0.8
+  if(i == 'Hake') interaction_mat[i,] <- 1
+}
+
+msm1 <- setUniformInteraction( msm); msm12 <- setNotUniformInteraction( msm) # the results of this two options should be the same
+
+msm <- setNotUniformInteraction( msm, interaction_mat = interaction_mat)
+
+interaction_matrix(msm); interaction_matrix(msm1); interaction_matrix(msm12)
+
+plotDiet(msm); plotDiet(msm1); plotDiet(msm12)
+plotDeath(msm); plotDeath(msm1); plotDeath(msm12)
+
+plotBiomass( project(msm, t_max=10))
+plotBiomass( project(msm1, t_max=10))
+plotBiomass( project(msm12, t_max=10))
+```
+<br><br>
+
+### Resource
+<br>
+
+The last step to obtain the model with the correct predation levels is to establish the interaction with the resource, which until now is null and which by default is constant, so that the smallest fish are able to feed on the resource, considering resource as those microorganisms (the cut-off is set at < 1 g in this case) available in the environment.
+
+```{r,results='hide'}
+msm <- alignResource(msm, w_pp_cutoff = 1)
+msm <- setResourceInteraction(msm, "resource_semichemostat")
+
+resource_level(msm)
+plotSpectra(msm)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+```
+<br><br>
+
+### Reproduction level
+<br>
+
+The final step is to establish an appropriate reproduction level for the different species. In this case, a reproduction_level of 0.5 has been chosen, as it represents a plausible level that each species can sustain without having to expend excessive energy.
+
+
+```{r,results='hide'}
+msm <- setBevertonHolt(msm, reproduction_level = 0.5)
+
+sim <- project(msm, t_max = 10)
+plotBiomass(sim)
+```
+<br><br>
+
+## Projections
+<br>
+
+Once the final model is obtained, it can be used to generate projections at different fishing effort levels. It's important to note that the selectivity and catchability of each species have been estimated using a fishing effort of 1, making it easier to work with.
+
+By multiplying the effort of one or more fleets simultaneously, differences can be observed across the entire ecosystem, reflecting the higher fishing mortality associated with each fleet. The same occurs when varying catchability, which, at the same effort level, allows us to work with each species separately within the same fleet (as is the case with 'Demersal' species, where the same fleet is used for all species except hake).
+
+```{r,results='hide'}
+
+init_eff <- msm@initial_effort; init_eff
+
+sim05 <- project( msm, effort = init_eff * 0.8, t_max = 50)
+plotBiomass(sim05)
+
+sim15 <- project( msm, effort = init_eff * 1.5, t_max = 50)
+plotBiomass(sim15)
+
+gp <- gear_params(msm)
+gp['Blue whiting, Demersales', 'catchability'] <- gp['Blue whiting, Demersales', 'catchability'] * 200
+msm2 <- msm
+gear_params(msm2) <- gp
+
+sim05 <- project( msm2, effort = init_eff * 0.8, t_max = 50)
+plotBiomass(sim05)
+
+sim15 <- project( msm2, effort = init_eff * 1.5, t_max = 50)
+plotBiomass(sim15)
+
+```
+
+

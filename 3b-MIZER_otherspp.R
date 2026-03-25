@@ -47,6 +47,7 @@ ssb_spp <- ssb_long |> pivot_wider( names_from = species, values_from = SSB) |> 
 ## LFD ------------------
 
 LFD_data <- lapply(LFD_spp_tp, function(df) { split(df, df$spp)})
+LFD_data$aver_y |> bind_rows() |> pivot_wider( names_from = spp, values_from = value) |> arrange(length)
 LFD_total <- lapply(LFD_spp_tp, function(df) { split(df, df$spp) |> 
     lapply(function(x) sum(x$value, na.rm = TRUE))})
 
@@ -166,6 +167,8 @@ for(i in spps){
   print( data.frame( m = spp_mods[[i]]@species_params$m,
                      erepro = spp_mods[[i]]@species_params$erepro, 
                      mu_mat = spp_mods[[i]]@species_params$mu_mat))
+  
+  print(paste0('erepro for a reproduction_level=0.5: ',round( setBevertonHolt(imodel, reproduction_level = 0.5)@species_params$erepro,4)))
   cat('\n'); cat('\n')
   
   print(plotYieldVsSize( spp_mods[[i]], x_var = "Length", catch = catch_mods[[i]]))

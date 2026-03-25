@@ -176,7 +176,7 @@ lepi_bos <- tibble(ldb_8c9a)|> select(Year, SSB)
 
 sard_pil <- tibble(sar_pil_8c9a)|> select(Year, SSB)
 
-trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)|> mutate(SSB=SSB*2.2)
+trac_tra <- tibble(tra_tra_9a)|> select(Year, SSB)|> mutate(SSB=SSB*1.6)
 
 micr_pou <- tibble(mic_pou_191214)|> select(Year, SSB)|> mutate(SSB=SSB*0.04)
 
