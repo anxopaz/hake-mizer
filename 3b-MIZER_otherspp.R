@@ -67,10 +67,10 @@ bio <- ssb_spp |> filter(Year %in% years$aver_y) |>
 load( './output/hake_model.RData')
 
 
-# For Biomass/SSB ratio
-
-ratio_sb <- mean( assessment$biomass/assessment$SSB)
-bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
+# # For Biomass/SSB ratio
+# 
+# ratio_sb <- mean( assessment$biomass/assessment$SSB)
+# bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
 
 
 # For mortality
@@ -101,7 +101,8 @@ spp_mods <- catch_mods <- plots_mods <- list()
 for(i in spps){
   
   ipars <- pars |> filter( red == i)
-  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  # issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB)
   ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
   icom <- ipars$common
   
@@ -118,8 +119,8 @@ for(i in spps){
   isp$a = ipars$a
   isp$b = ipars$b 
   
-  isp$biomass_observed <- issb$Bio
-  isp$biomass_cutoff <- lwf(4,ipars$a,ipars$b)
+  isp$biomass_observed <- issb$SSB   # issb$Bio for Biomass
+  isp$biomass_cutoff <- isp$w_mat    # lwf(4,ipars$a,ipars$b) if Biomass
   
   imodel <- newAllometricPars( isp, max_w = hake_model@species_params$w_max)
   
@@ -175,6 +176,10 @@ for(i in spps){
   
 }
 
+
+for(i in spps) print(data.frame(SSB_obs = spp_mods[[i]]@species_params$biomass_observed/10^6, 
+                                SSB_estwbio = getSSB(spp_mods[[i]])/10^6,
+                                SSB_est = getBiomass(spp_mods[[i]], use_cutoff = T)/10^6))
 
 print( data.frame( species = 'Hake', m = hake_model@species_params$m,
                    erepro = hake_model@species_params$erepro, 

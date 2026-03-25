@@ -264,7 +264,7 @@ plotYieldVsSizeByGear(hake_m, catch = all_c)
 
 The final decision, considering the results, was to continue with the model with the commercial landigs data.  
 
-With this model, where playback is not initially active, we wanted to see what would happen considering different playback levels, to verify that the "erepro" values remained within feasible ranges.
+With this model, where reproduction is not initially active, we wanted to see what would happen considering different reproduction levels, to verify that the "erepro" values remained within feasible ranges.
 
 
 ```{r}
@@ -320,7 +320,7 @@ LFD_data$aver_y |> bind_rows() |> pivot_wider( names_from = spp, values_from = v
 
 The major problem with this catch data is that it comes from a survey ("Demersal") that is highly selective for certain size ranges. Furthermore, it is not specific to any particular species, so this specific size range means that for some species, such as small pelagic fish, the sizes will correspond to large individuals, while for demersal fish, which reach larger sizes, something similar to what occurred with hake will happen. In other words, how the fleet's selectivity is handled can lead to different interpretations by the model (or it may assume that there are no large fish because it cannot find them, or that there is a significant lack of information on the largest sizes).
 
-On the other hand, we have no information regarding the total biomass of each species, but we do have information on the subsurface biomass (SSB). Here, it was decided to consider the SSB/biomass ratio of hake and extrapolate it to other species.
+On the other hand, we have no information regarding the total biomass of each species, but we do have information on the spawning stock biomass (SSB). Here, it was decided to consider the SSB/biomass ratio of hake and extrapolate it to other species.
 
 It should also be noted that in some cases the SSB obtained from the assessment models of the different species did not correspond to the study area. For example, the hake biomass corresponds to that estimated for ICES areas 8c9a, as does the biomass of some other species, but not all, such as blue whiting or mackerel. Failing to consider these differences led to models clearly dominated by these species, even though in none of them are they top predators at all (this is something we will see later, but which was addressed in a limited way).
 
@@ -354,7 +354,7 @@ bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
 
 At this point, it's worth noting that adjusting each species separately led to erepro values greater than 1, which doesn't make sense. This is because, when allocating available energy for reproduction and growth, the portion dedicated to reproduction started earlier than expected due to the fixed value for $m$ in the equation used to obtain $\psi$. However, we allowed this m to vary during the optimization process.
 
-```{r,results='hide'}
+```{r}
 spp_mods <- catch_mods <- plots_mods <- list()
 
 for(i in spps){

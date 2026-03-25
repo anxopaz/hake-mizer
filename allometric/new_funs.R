@@ -603,6 +603,9 @@ update_params <- function(params, species = 1, pars, data) {
   gps[,'l25_right'] <- ifelse(gps$sel_func=='double_sigmoid_length', gp_res$l25_right, NA)
   gps[,'catchability'] <- gp_res$catchability
   
+  if(nrow(gps)==1 && gps$sel_func!='double_sigmoid_length'){
+    gps[,'l50_right'] <- gps[,'l25_right'] <- NULL}
+  
   gear_params(params)[gp_select, ] <- gps
   
   # recalculate the power-law mortality rate
