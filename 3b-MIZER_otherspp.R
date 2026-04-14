@@ -123,7 +123,7 @@ for(i in spps){
   isp$biomass_observed <- issb$SSB   # issb$Bio for Biomass
   isp$biomass_cutoff <- isp$w_mat    # lwf(4,ipars$a,ipars$b) if Biomass
   
-  imodel <- newAllometricPars( isp, max_w = hake_model@species_params$w_max)
+  imodel <- newAllometricParams( isp, max_w = hake_model@species_params$w_max)
   
   if( ftype == 2){
     
