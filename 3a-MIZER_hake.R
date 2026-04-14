@@ -14,12 +14,11 @@ library(plotly)
 library(reshape)
 library(sm)
 library(mizer)
-library(mizerExperimental)
 library(mizerEcopath)
 library(TMB)
 
 source( './scripts/aux_functions.R')
-source( './allometric/new_funs.R')
+# source( './allometric/new_funs.R')
 
 
 # Load data ----------------------------

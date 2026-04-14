@@ -19,7 +19,7 @@ library(TMB)
 library(mizerEcopath)
 
 source( './scripts/aux_functions.R')
-source('./allometric/new_funs.R')
+# source('./allometric/new_funs.R')
 
 
 
@@ -106,7 +106,8 @@ for(i in spps){
   ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
   icom <- ipars$common
   
-  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
+  # ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
+  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 2, 2)
   
   l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
   
@@ -124,22 +125,37 @@ for(i in spps){
   
   imodel <- newAllometricPars( isp, max_w = hake_model@species_params$w_max)
   
-  igp <- data.frame(
-    gear = "Demersales", 
-    species = icom, 
-    catchability = 1,
-    sel_func = ifelse( ftype == 1, "double_sigmoid_length", "sigmoid_length"),
-    l50 = ipars$l_mat,
-    l25 = ipars$l_mat*0.8,
-    l50_right = ifelse( ftype == 1, ipars$l_mat*1.05, NA),
-    l25_right = ifelse( ftype == 1, ipars$l_mat*1.2, NA),
-    yield_observed = sum(ilfd$catch)
-  )
-  
+  if( ftype == 2){
+    
+    igp <- data.frame(
+      gear = "Demersales", 
+      species = icom, 
+      catchability = 1,
+      sel_func = "double_sigmoid_length",
+      l50 = ipars$l_mat,
+      l25 = ipars$l_mat*0.8,
+      l50_right = ipars$l_mat*1.05,
+      l25_right = ipars$l_mat*1.2,
+      yield_observed = sum(ilfd$catch)
+    )
+    
+  } else if( ftype == 1){
+    
+    igp <- data.frame(
+      gear = "Demersales", 
+      species = icom, 
+      catchability = 1,
+      sel_func = "sigmoid_length",
+      l50 = ipars$l_mat,
+      l25 = ipars$l_mat*0.8,
+      yield_observed = sum(ilfd$catch)
+    )
+  }
+
   gear_params(imodel) <- igp
   initial_effort(imodel) <- 1
   
-  yield <- getYield(imodel)
+  yield <- as.numeric(getYield(imodel))
   igp$catchability <- igp$yield_observed / yield
   gear_params(imodel) <- igp
   
@@ -152,7 +168,7 @@ for(i in spps){
   while( erepro > 0.5){
     
     mu_mat_lim <- mu_mat_lim - 0.05
-    imodel <- suppressWarnings( matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim))
+    imodel <- suppressWarnings( matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim, map = NULL))
     erepro <- imodel@species_params$erepro
   
   }

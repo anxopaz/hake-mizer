@@ -14,12 +14,11 @@ library(plotly)
 library(reshape)
 library(sm)
 library(mizer)
-library(mizerExperimental)
 library(mizerEcopath)
 library(TMB)
 
 source( './scripts/aux_functions.R')
-source('./allometric/new_funs.R')
+# source('./allometric/new_funs.R')
 
 load( './output/hake_model.RData')
 load( './output/other_spp.RData')
@@ -42,7 +41,7 @@ save( allmods, allcatch, catchdf, file='./input/mods.RData')
 
 msm <- mizerEcopath::bindParams( allmods)
 
-msm@linecolour[1:8] <- NS_params@linecolour[1:8]
+# msm@linecolour[1:8] <- NS_params@linecolour[1:8]
 
 sim <- project(msm, t_max = 10)
 plotBiomass(sim)

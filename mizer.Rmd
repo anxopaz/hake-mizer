@@ -21,7 +21,7 @@ library(mizerEcopath)
 library(TMB)
 
 source('scripts/aux_functions.R')
-source('allometric/new_funs.R')
+# source('allometric/new_funs.R')
 ```
 
 ## Hake models
@@ -90,7 +90,7 @@ gear_params(hake_model) <- gp
 catch_onefleet <- corLFD |> group_by(length) |> summarise(catch = sum(number)) |>
   mutate( dl = 1, species = 'Hake', gear = "Total")
 
-hake_model_newfun <- matchCatch(hake_model, catch = catch_onefleet)
+hake_model_newfun <- mizerEcopath::matchCatch(hake_model, catch = catch_onefleet)
 plotYieldVsSize(hake_model_newfun, x_var = "Length", catch = catch_onefleet)
 
 ```
@@ -121,7 +121,7 @@ gear_params(hake_model) <- gp
 
 initial_effort(hake_model) <- 1
 
-hake_model_fleets <- matchCatch(hake_model, catch = catch_allfleets)
+hake_model_fleets <- mizerEcopath::matchCatch(hake_model, catch = catch_allfleets)
 
 plotYieldVsSizeByGear(hake_model_fleets, catch = catch_allfleets)
 plotBiomass( project(hake_model_fleets, t_max=10))
@@ -154,8 +154,6 @@ gp <- data.frame(
   sel_func = rep( 'sigmoid_length', length(surv_names)),
   l50 = max_length$length*0.8,
   l25 = max_length$length*0.7,
-  l50_right = rep( NA, length(surv_names)),
-  l25_right = rep( NA, length(surv_names)),
   yield_observed = sum(surveys_sum$catch),
   catchability = 1)
 
@@ -163,7 +161,7 @@ gear_params(hake_model) <- gp
 
 initial_effort(hake_model) <- 1
 
-hake_model_onesurvey <- matchCatch(hake_model, catch = onesurvey)
+hake_model_onesurvey <- mizerEcopath::matchCatch(hake_model, catch = onesurvey)
 plotYieldVsSizeByGear(hake_model_onesurvey, catch = onesurvey)
 
 
@@ -189,8 +187,6 @@ gp <- data.frame(
   sel_func = rep( 'sigmoid_length', length(surv_names)),
   l50 = max_length$length*0.8,
   l25 = max_length$length*0.7,
-  l50_right = rep( NA, length(surv_names)),
-  l25_right = rep( NA, length(surv_names)),
   yield_observed = surveys_sum$catch,
   catchability = surveys_sum$catch/sum(surveys_sum$catch))
 
@@ -198,7 +194,7 @@ gear_params(hake_model) <- gp
 
 initial_effort(hake_model) <- 1
 
-hake_model_surveys <- matchCatch(hake_model, catch = surveys)
+hake_model_surveys <- mizerEcopath::matchCatch(hake_model, catch = surveys)
 plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
 
 gp <- data.frame(
@@ -214,7 +210,7 @@ gp <- data.frame(
 
 gear_params(hake_model) <- gp
 
-hake_model_surveys <- matchCatch(hake_model, catch = surveys)
+hake_model_surveys <- mizerEcopath::matchCatch(hake_model, catch = surveys)
 plotYieldVsSizeByGear(hake_model_surveys, catch = surveys)
 ```
 <br>
@@ -252,7 +248,7 @@ gear_params(hake_model) <- gp
 
 initial_effort(hake_model) <- 1
 
-hake_m <- matchCatch(hake_model, catch = all_c)
+hake_m <- mizerEcopath::matchCatch(hake_model, catch = all_c)
 plotYieldVsSizeByGear(hake_m, catch = all_c)
 
 ```
@@ -320,9 +316,7 @@ LFD_data$aver_y |> bind_rows() |> pivot_wider( names_from = spp, values_from = v
 
 The major problem with this catch data is that it comes from a survey ("Demersal") that is highly selective for certain size ranges. Furthermore, it is not specific to any particular species, so this specific size range means that for some species, such as small pelagic fish, the sizes will correspond to large individuals, while for demersal fish, which reach larger sizes, something similar to what occurred with hake will happen. In other words, how the fleet's selectivity is handled can lead to different interpretations by the model (or it may assume that there are no large fish because it cannot find them, or that there is a significant lack of information on the largest sizes).
 
-On the other hand, we have no information regarding the total biomass of each species, but we do have information on the spawning stock biomass (SSB). Here, it was decided to consider the SSB/biomass ratio of hake and extrapolate it to other species.
-
-It should also be noted that in some cases the SSB obtained from the assessment models of the different species did not correspond to the study area. For example, the hake biomass corresponds to that estimated for ICES areas 8c9a, as does the biomass of some other species, but not all, such as blue whiting or mackerel. Failing to consider these differences led to models clearly dominated by these species, even though in none of them are they top predators at all (this is something we will see later, but which was addressed in a limited way).
+It should also be noted that in some cases the SSB obtained from the assessment models of the different species did not correspond to the study area. For example, the hake biomass corresponds to that estimated for ICES areas 8c9a, as does the SSB of some other species, but not all, such as blue whiting or mackerel. Failing to consider these differences led to models clearly dominated by these species, even though in none of them are they top predators at all (this is something we will see later, but which was addressed in a limited way).
 
 HERE THERE IS CLEARLY GREAT ROOM FOR IMPROVEMENT IN THE MODEL
 
@@ -337,10 +331,6 @@ bio <- ssb_spp |> filter(Year %in% years$aver_y) |>
   pivot_longer(cols = everything(), names_to = "species", values_to = "SSB") 
 
 
-## Using hake as a reference for Biomass/SSB ratio
-
-ratio_sb <- mean( assessment$biomass/assessment$SSB)
-bio <- bio |> mutate( Bio = SSB * ratio_sb); bio
 ```
 
 ```{r,results='hide'}
@@ -360,11 +350,13 @@ spp_mods <- catch_mods <- plots_mods <- list()
 for(i in spps){
   
   ipars <- pars |> filter( red == i)
-  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  # issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB, Bio = 10^6 * Bio)
+  issb <- bio |> filter( species == i) |> mutate( SSB = 10^6 * SSB)
   ilfd <- lfd[[i]] |> mutate(catch = value * 10^6)
   icom <- ipars$common
   
-  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
+  # ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 1, 2)
+  ftype <- ifelse( icom %in% c( 'Mackerel', 'Four-spot megrim', 'Megrim'), 2, 2)
   
   l_max <- 1.001 * max(ilfd$length + 5, na.rm = TRUE)
   
@@ -377,27 +369,42 @@ for(i in spps){
   isp$a = ipars$a
   isp$b = ipars$b 
   
-  isp$biomass_observed <- issb$Bio
-  isp$biomass_cutoff <- lwf(4,ipars$a,ipars$b)
+  isp$biomass_observed <- issb$SSB   # issb$Bio for Biomass
+  isp$biomass_cutoff <- isp$w_mat    # lwf(4,ipars$a,ipars$b) if Biomass
   
   imodel <- newAllometricPars( isp, max_w = hake_model@species_params$w_max)
   
-  igp <- data.frame(
-    gear = "Demersales", 
-    species = icom, 
-    catchability = 1,
-    sel_func = ifelse( ftype == 1, "double_sigmoid_length", "sigmoid_length"),
-    l50 = ipars$l_mat,
-    l25 = ipars$l_mat*0.8,
-    l50_right = ifelse( ftype == 1, ipars$l_mat*1.05, NA),
-    l25_right = ifelse( ftype == 1, ipars$l_mat*1.2, NA),
-    yield_observed = sum(ilfd$catch)
-  )
+  if( ftype == 2){
+    
+    igp <- data.frame(
+      gear = "Demersales", 
+      species = icom, 
+      catchability = 1,
+      sel_func = "double_sigmoid_length",
+      l50 = ipars$l_mat,
+      l25 = ipars$l_mat*0.8,
+      l50_right = ipars$l_mat*1.05,
+      l25_right = ipars$l_mat*1.2,
+      yield_observed = sum(ilfd$catch)
+    )
+    
+  } else if( ftype == 1){
+    
+    igp <- data.frame(
+      gear = "Demersales", 
+      species = icom, 
+      catchability = 1,
+      sel_func = "sigmoid_length",
+      l50 = ipars$l_mat,
+      l25 = ipars$l_mat*0.8,
+      yield_observed = sum(ilfd$catch)
+    )
+  }
   
   gear_params(imodel) <- igp
   initial_effort(imodel) <- 1
   
-  yield <- getYield(imodel)
+  yield <- as.numeric(getYield(imodel))
   igp$catchability <- igp$yield_observed / yield
   gear_params(imodel) <- igp
   
@@ -410,7 +417,7 @@ for(i in spps){
   while( erepro > 0.5){
     
     mu_mat_lim <- mu_mat_lim - 0.05
-    imodel <- suppressWarnings( matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim))
+    imodel <- suppressWarnings( mizerEcopath::matchCatch( imodel, catch = icatch, mu_mat_lim = mu_mat_lim, map = NULL))
     erepro <- imodel@species_params$erepro
   
   }
@@ -427,23 +434,30 @@ for(i in spps){
                      erepro = spp_mods[[i]]@species_params$erepro, 
                      mu_mat = spp_mods[[i]]@species_params$mu_mat))
   
-  print( paste0('erepro for a reproduction_level=0.5: ',
-    round( setBevertonHolt(imodel, reproduction_level = 0.5)@species_params$erepro, 4)))
-  
+  print(paste0('erepro for a reproduction_level=0.5: ',round( setBevertonHolt(imodel, reproduction_level = 0.5)@species_params$erepro,4)))
   cat('\n'); cat('\n')
   
   print(plotYieldVsSize( spp_mods[[i]], x_var = "Length", catch = catch_mods[[i]]))
   
 }
+
+for(i in spps) print(data.frame(SSB_obs = spp_mods[[i]]@species_params$biomass_observed/10^6, 
+                                SSB_estwbio = getSSB(spp_mods[[i]])/10^6,
+                                SSB_est = getBiomass(spp_mods[[i]], use_cutoff = T)/10^6))
+
+print( data.frame( species = 'Hake', m = hake_model@species_params$m,
+                   erepro = hake_model@species_params$erepro, 
+                   mu_mat = hake_model@species_params$mu_mat))
+
 ```
 <br><br>
 
-At this point, two things are worth highlighting. First, the adjustment using the previous function resulted in exaggerated external mortality, leading to very high $erepro$ values. We came up with the solution of setting an upper limit to prevent mortality from being so high. The problem is knowing how to limit it. Here we realized that when allocating available energy for reproduction and growth, the portion corresponding to reproduction started earlier than expected due to the value set for $m$ in the equation for obtaining $\psi$. However, we allowed this $m$ to vary in the optimization, so less was invested in reproduction in smaller sizes, which in turn reduced the need for such a high mortality limit. Taking these two aspects into account, the loop shows how erepro is calculated after an initial adjustment to bring it to a reasonable value (< 0.5), decreasing this new `mu_mat_lim` argument in the `matchCatch()` function and allowing $m$ to be estimated.
+At this point, two things are worth highlighting. First, the adjustment using the previous function resulted in exaggerated external mortality, leading to very high $erepro$ values. We came up with the solution of setting an upper limit to prevent mortality from being so high. The problem is knowing how to limit it. Here we realized that when allocating available energy for reproduction and growth, the portion corresponding to reproduction started earlier than expected due to the value set for $m$ in the equation for obtaining $\psi$. However, we allowed this $m$ to vary in the optimization, so less was invested in reproduction in smaller sizes, which in turn reduced the need for such a high mortality limit. Taking these two aspects into account, the loop shows how erepro is calculated after an initial adjustment to bring it to a reasonable value (< 0.5), decreasing this new `mu_mat_lim` argument in the `mizerEcopath::matchCatch()` function and allowing $m$ to be estimated.
 
 <br><br><br>
 
 
-## Multispcies modeling 
+## Multispecies modeling 
 <br>
 Now, with fishing mortality adjusted for each species separately, we can build our first multispecies model. Things to consider:
 
