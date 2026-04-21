@@ -41,7 +41,7 @@ save( allmods, allcatch, catchdf, file='./input/mods.RData')
 
 msm <- mizerEcopath::bindParams( allmods)
 
-# msm@linecolour[1:8] <- NS_params@linecolour[1:8]
+msm@linecolour[1:8] <- NS_params@linecolour[1:8]
 
 sim <- project(msm, t_max = 10)
 plotBiomass(sim)

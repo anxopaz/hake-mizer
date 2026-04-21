@@ -190,6 +190,8 @@ for(i in spps){
   
   print(plotYieldVsSize( spp_mods[[i]], x_var = "Length", catch = catch_mods[[i]]))
   
+  print( plotBiomass( project( spp_mods[[i]], t_max = 10)))
+  
 }
 
 
